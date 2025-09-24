@@ -3,12 +3,17 @@ using DominoGame.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace DominoGameWPF
 {
     public partial class MainWindow : Window
     {
-        public DominoGameController game { get; set; }
+        private const double TileSpacing = 5;
+        private const double MaxRowWidth = 800;
+
+        public DominoGameController Game { get; private set; }
 
         public MainWindow()
         {
@@ -18,17 +23,14 @@ namespace DominoGameWPF
 
         private void InitializeGame()
         {
-            game = new DominoGameController();
+            Game = new DominoGameController();
+            Game.OnTilePlayed += Game_OnTilePlayed;
+            Game.OnGameOver += Game_OnGameOver;
 
-            // Subscribe to game events
-            game.OnTilePlayed += Game_OnTilePlayed;
-            game.OnGameOver += Game_OnGameOver;
-
-            game.StartGame();
+            Game.StartGame();
             RefreshUI();
 
-            // Jika giliran pertama AI → langsung jalan
-            if (game.CurrentPlayer.Name == "Computer")
+            if (IsComputerTurn())
                 _ = ComputerMoveAsync();
         }
 
@@ -40,34 +42,130 @@ namespace DominoGameWPF
 
         private void Game_OnGameOver(Player winner)
         {
-            MessageBox.Show($"{winner.Name} wins!", "Domino Game", MessageBoxButton.OK, MessageBoxImage.Information);
+            // Ranking berdasarkan sisa point tangan
+            var ranking = Game.Players
+                .Select(p => new { p.Name, Points = p.Hand.Sum(t => t.TotalPip) })
+                .OrderBy(p => p.Points)
+                .ToList();
+
+            string message = $"Game Over! Winner: {winner.Name}\n\nRanking:\n";
+            int rank = 1;
+            foreach (var p in ranking)
+            {
+                message += $"{rank}. {p.Name} - {p.Points} points\n";
+                rank++;
+            }
+
+            MessageBox.Show(message, "Domino Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+
             InitializeGame();
         }
 
         private void RefreshUI()
         {
-            // Update board
-            BoardTiles.ItemsSource = null;
-            BoardTiles.ItemsSource = game.Board;
-
-            // Update player hand
             PlayerHand.ItemsSource = null;
-            PlayerHand.ItemsSource = game.CurrentPlayer.Hand;
-
-            StatusText.Text = $"{game.CurrentPlayer.Name}'s turn";
+            PlayerHand.ItemsSource = Game.CurrentPlayer.Hand;
+            RenderBoard();
+            StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
         }
+
+        #region Board Rendering
+
+        private void RenderBoard()
+        {
+            BoardTiles.Children.Clear();
+            if (!Game.Board.Any()) return;
+
+            double x = 0, y = 0, rowHeight = 0;
+            int? prevRight = null;
+
+            foreach (var tile in Game.Board)
+            {
+                SetTileRotationAndFlip(tile, prevRight);
+                prevRight = tile.Right;
+
+                var (tileWidth, tileHeight) = GetTileDimensions(tile);
+
+                if (x + tileWidth > MaxRowWidth)
+                {
+                    x = 0;
+                    y += rowHeight + TileSpacing;
+                    rowHeight = 0;
+                }
+
+                rowHeight = Math.Max(rowHeight, tileHeight);
+
+                // Gunakan Image langsung untuk board agar tidak clickable
+                var boardTile = CreateBoardTile(tile, tileWidth, tileHeight);
+                Canvas.SetLeft(boardTile, x);
+                Canvas.SetTop(boardTile, y);
+                BoardTiles.Children.Add(boardTile);
+
+                x += tileWidth + TileSpacing;
+            }
+
+            BoardTiles.Height = y + rowHeight + TileSpacing;
+        }
+
+        private (double width, double height) GetTileDimensions(DominoTile tile)
+            => tile.RotationAngle == 90 ? (60, 120) : (120, 60);
+
+        private void SetTileRotationAndFlip(DominoTile tile, int? prevRight)
+        {
+            tile.IsFlipped = false;
+
+            if (tile.IsDouble)
+                tile.RotationAngle = 90;
+            else if (prevRight.HasValue)
+            {
+                if (tile.Left == prevRight.Value)
+                    tile.RotationAngle = 0;
+                else if (tile.Right == prevRight.Value)
+                {
+                    tile.RotationAngle = 0;
+                    tile.Flip();
+                }
+                else
+                    tile.RotationAngle = 180;
+            }
+            else
+                tile.RotationAngle = 0;
+        }
+
+        private Image CreateBoardTile(DominoTile tile, double width, double height)
+        {
+            return new Image
+            {
+                Source = tile.DisplayImage,
+                Width = width,
+                Height = height,
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                RenderTransform = new TransformGroup
+                {
+                    Children =
+                    {
+                        new RotateTransform(tile.RotationAngle),
+                        new ScaleTransform { ScaleX = tile.IsFlipped ? -1 : 1, ScaleY = 1 }
+                    }
+                }
+            };
+        }
+
+        #endregion
+
+        #region Player Actions
 
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
-            if (game.CurrentPlayer.Name == "Computer") return;
+            if (IsComputerTurn()) return;
 
-            if (sender is System.Windows.Controls.Button btn && btn.DataContext is DominoTile tile)
-                PlayerMove(tile);
+            if (sender is Button btn && btn.DataContext is DominoTile tile)
+                PlayTileForCurrentPlayer(tile);
         }
 
-        private void PlayerMove(DominoTile tile)
+        private void PlayTileForCurrentPlayer(DominoTile tile)
         {
-            bool played = game.PlayTile(tile, true) || game.PlayTile(tile, false);
+            bool played = Game.PlayTile(tile, true) || Game.PlayTile(tile, false);
 
             if (!played)
             {
@@ -83,38 +181,31 @@ namespace DominoGameWPF
         {
             if (CheckGameOver()) return;
 
-            game.NextTurn();
+            Game.NextTurn();
             RefreshUI();
 
-            if (game.CurrentPlayer.Name == "Computer")
+            if (IsComputerTurn())
                 _ = ComputerMoveAsync();
         }
 
         private async Task ComputerMoveAsync()
         {
-            await Task.Delay(500);
+            await Task.Delay(1000);
 
-            while (game.CurrentPlayer.Name == "Computer")
+            while (IsComputerTurn())
             {
-                var tile = GetPlayableTile(game.CurrentPlayer);
+                var tile = GetPlayableTile(Game.CurrentPlayer);
 
                 if (tile != null)
                 {
-                    game.PlayTile(tile, true);
-                    RefreshUI();
-
-                    if (CheckGameOver()) return;
-
-                    game.NextTurn();
-                    RefreshUI();
+                    PlayTileForCurrentPlayer(tile);
                     await Task.Delay(500);
                 }
                 else
                 {
                     StatusText.Text = "Computer cannot play, skipping turn...";
-                    game.NextTurn();
+                    Game.NextTurn();
                     RefreshUI();
-
                     if (CheckGameOver()) return;
                     await Task.Delay(500);
                 }
@@ -123,45 +214,59 @@ namespace DominoGameWPF
 
         private DominoTile GetPlayableTile(Player player)
         {
-            if (game.Board.Count == 0)
-                return player.Hand.FirstOrDefault();
+            if (!Game.Board.Any()) return player.Hand.FirstOrDefault();
 
-            int leftEnd = game.Board.First().Left;
-            int rightEnd = game.Board.Last().Right;
+            int leftEnd = Game.Board.First().Left;
+            int rightEnd = Game.Board.Last().Right;
 
             return player.Hand.FirstOrDefault(t => t.Matches(leftEnd) || t.Matches(rightEnd));
         }
 
+        private bool HasPlayableTile(Player player)
+        {
+            if (!Game.Board.Any()) return true;
+
+            int leftEnd = Game.Board.First().Left;
+            int rightEnd = Game.Board.Last().Right;
+
+            return player.Hand.Any(t => t.Matches(leftEnd) || t.Matches(rightEnd));
+        }
+
         private bool CheckGameOver()
         {
-            bool anyPlayable = game.CurrentPlayer.Hand.Any(t =>
-                game.Board.Count == 0 || t.Matches(game.Board.First().Left) || t.Matches(game.Board.Last().Right));
+            // Jika board kosong, game belum selesai
+            if (!Game.Board.Any()) return false;
 
-            if (!anyPlayable && game.Board.Count > 0)
+            // Jika semua player tidak bisa main, game over
+            if (Game.Players.All(p => !HasPlayableTile(p)))
             {
-                Game_OnGameOver(game.GetWinner());
+                var winner = GetWinnerByPoints();
+                Game_OnGameOver(winner);
                 return true;
             }
 
             return false;
         }
 
+        private Player GetWinnerByPoints()
+            => Game.Players.OrderBy(p => p.Hand.Sum(t => t.TotalPip)).First();
+
         private void SkipTurnIfNoPlayableTile()
         {
-            bool cannotPlay = game.CurrentPlayer.Hand.All(t =>
-                game.Board.Count > 0 && !t.Matches(game.Board.First().Left) && !t.Matches(game.Board.Last().Right));
+            if (HasPlayableTile(Game.CurrentPlayer)) return;
 
-            if (cannotPlay)
-            {
-                StatusText.Text = $"{game.CurrentPlayer.Name} cannot play, skipping turn...";
-                game.NextTurn();
-                RefreshUI();
+            StatusText.Text = $"{Game.CurrentPlayer.Name} cannot play, skipping turn...";
+            Game.NextTurn();
+            RefreshUI();
 
-                if (CheckGameOver()) return;
+            if (CheckGameOver()) return;
 
-                if (game.CurrentPlayer.Name == "Computer")
-                    _ = ComputerMoveAsync();
-            }
+            if (IsComputerTurn())
+                _ = ComputerMoveAsync();
         }
+
+        private bool IsComputerTurn() => Game.CurrentPlayer.Name == "Computer";
+
+        #endregion
     }
 }

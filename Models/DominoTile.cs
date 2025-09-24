@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
@@ -11,27 +9,32 @@ namespace DominoGame.Models
     public class DominoTile
     {
         // === PROPERTIES ===
-        public int Left { get; }
-        public int Right { get; }
+        public int Left { get; private set; }
+        public int Right { get; private set; }
 
-        public BitmapImage Image { get; }
+        private readonly BitmapImage _originalImage;
 
-        // Tile double = vertikal, total pip = jumlah angka
         public bool IsDouble => Left == Right;
         public int TotalPip => Left + Right;
 
-        // Rotasi default 0°; bisa diubah (board = 0, player hand = 0, double tile = 90)
+        // Rotasi default 0°; double tile default 90°
         public double RotationAngle { get; set; } = 0;
+
+        // Flag untuk flip horizontal (visual)
+        public bool IsFlipped { get; set; } = false;
+
+        /// <summary>
+        /// Gambar tile (tidak perlu load flipped lagi)
+        /// </summary>
+        public BitmapImage DisplayImage => _originalImage;
 
         // === CONSTRUCTORS ===
         public DominoTile(int left, int right)
         {
             Left = left;
             Right = right;
+            _originalImage = LoadImage(left, right);
 
-            Image = LoadImage(left, right);
-
-            // Jika double, default rotation di board 90°
             if (IsDouble)
                 RotationAngle = 90;
         }
@@ -40,7 +43,7 @@ namespace DominoGame.Models
         {
             Left = left;
             Right = right;
-            Image = image;
+            _originalImage = image;
 
             if (IsDouble)
                 RotationAngle = 90;
@@ -48,45 +51,59 @@ namespace DominoGame.Models
 
         // === METHODS ===
 
-        // Flip tile (swap sisi) tanpa kehilangan image
-        public DominoTile FlippedTile()
+        /// <summary>
+        /// Mengembalikan tile baru dengan sisi dibalik
+        /// </summary>
+        public DominoTile FlippedTile() => new DominoTile(Right, Left, _originalImage)
         {
-            return new DominoTile(Right, Left, this.Image)
-            {
-                RotationAngle = this.RotationAngle
-            };
+            RotationAngle = this.RotationAngle,
+            IsFlipped = !this.IsFlipped
+        };
+
+        /// <summary>
+        /// Membalik sisi tile saat ini (in-place)
+        /// </summary>
+        public void Flip()
+        {
+            (Left, Right) = (Right, Left);
+            IsFlipped = !IsFlipped;
         }
 
-        // Cek apakah tile cocok dengan angka tertentu
+        /// <summary>
+        /// Cek apakah tile cocok dengan angka tertentu
+        /// </summary>
         public bool Matches(int number) => Left == number || Right == number;
 
-        // Animasi rotasi Image
+        /// <summary>
+        /// Rotasi dengan animasi pada Image UI
+        /// </summary>
         public void RotateWithAnimation(Image image, double toAngle)
         {
-            var rotateTransform = new RotateTransform(RotationAngle);
+            var rotateTransform = new System.Windows.Media.RotateTransform(RotationAngle);
             image.RenderTransform = rotateTransform;
-            image.RenderTransformOrigin = new Point(0.5, 0.5);
+            image.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
 
             var animation = new DoubleAnimation
             {
                 From = RotationAngle,
                 To = toAngle,
                 Duration = TimeSpan.FromMilliseconds(400),
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseInOut }
+                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut }
             };
 
-            rotateTransform.BeginAnimation(RotateTransform.AngleProperty, animation);
-
+            rotateTransform.BeginAnimation(System.Windows.Media.RotateTransform.AngleProperty, animation);
             RotationAngle = toAngle;
         }
 
-        // Load image dari folder Assets
+        /// <summary>
+        /// Load image dari folder Assets
+        /// </summary>
         private BitmapImage LoadImage(int left, int right)
         {
             try
             {
-                var fileName = $"{left}_{right}.png";
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
+                string fileName = $"{left}_{right}.png";
+                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
 
                 if (!File.Exists(path))
                     throw new FileNotFoundException($"⚠️ Asset not found: {path}");
@@ -96,7 +113,6 @@ namespace DominoGame.Models
                 bmp.UriSource = new Uri(path, UriKind.Absolute);
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
                 bmp.EndInit();
-
                 return bmp;
             }
             catch (Exception ex)
