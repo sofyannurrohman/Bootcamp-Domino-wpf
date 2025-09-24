@@ -3,7 +3,6 @@ using DominoGame.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
 
 namespace DominoGameWPF
 {
@@ -28,7 +27,7 @@ namespace DominoGameWPF
             game.StartGame();
             RefreshUI();
 
-            // If first turn is AI, start AI move
+            // Jika giliran pertama AI → langsung jalan
             if (game.CurrentPlayer.Name == "Computer")
                 _ = ComputerMoveAsync();
         }
@@ -47,10 +46,11 @@ namespace DominoGameWPF
 
         private void RefreshUI()
         {
-            // Update board and player hand
+            // Update board
             BoardTiles.ItemsSource = null;
             BoardTiles.ItemsSource = game.Board;
 
+            // Update player hand
             PlayerHand.ItemsSource = null;
             PlayerHand.ItemsSource = game.CurrentPlayer.Hand;
 
@@ -59,9 +59,9 @@ namespace DominoGameWPF
 
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
-            if (game.CurrentPlayer.Name == "Computer") return; // block human clicks during AI turn
+            if (game.CurrentPlayer.Name == "Computer") return;
 
-            if (sender is Button btn && btn.DataContext is DominoTile tile)
+            if (sender is System.Windows.Controls.Button btn && btn.DataContext is DominoTile tile)
                 PlayerMove(tile);
         }
 
@@ -92,7 +92,7 @@ namespace DominoGameWPF
 
         private async Task ComputerMoveAsync()
         {
-            await Task.Delay(500); // simulate thinking
+            await Task.Delay(500);
 
             while (game.CurrentPlayer.Name == "Computer")
             {
@@ -107,7 +107,7 @@ namespace DominoGameWPF
 
                     game.NextTurn();
                     RefreshUI();
-                    await Task.Delay(500); // small delay before next AI move
+                    await Task.Delay(500);
                 }
                 else
                 {
@@ -134,7 +134,6 @@ namespace DominoGameWPF
 
         private bool CheckGameOver()
         {
-            // Game over if current player has no playable tiles and no one else can play
             bool anyPlayable = game.CurrentPlayer.Hand.Any(t =>
                 game.Board.Count == 0 || t.Matches(game.Board.First().Left) || t.Matches(game.Board.Last().Right));
 

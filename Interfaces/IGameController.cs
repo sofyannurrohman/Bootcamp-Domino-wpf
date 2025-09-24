@@ -9,9 +9,9 @@ namespace DominoGame.Interfaces
 {
     public interface IGameController
     {
-        List<DominoTile> Board { get; }
+        BoardNode? Root { get; }
+        List<Player> Players { get; }
         Player CurrentPlayer { get; }
-        void StartGame();
         bool PlayTile(DominoTile tile, bool placeLeft);
         void NextTurn();
         bool IsGameOver();

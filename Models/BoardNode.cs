@@ -6,7 +6,16 @@ using System.Threading.Tasks;
 
 namespace DominoGame.Models
 {
-    class BoardNode
+    public class BoardNode
     {
+        public DominoTile Tile { get; set; }
+        public BoardNode? Left { get; set; }
+        public BoardNode? Right { get; set; }
+
+        public BoardNode(DominoTile tile)
+        {
+            Tile = tile;
+        }
     }
+
 }
