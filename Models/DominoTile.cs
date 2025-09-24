@@ -9,6 +9,7 @@ namespace DominoGame.Models
         public int Left { get; }
         public int Right { get; }
         public BitmapImage Image { get; }
+
         public double RotationAngle { get; set; } = 0; // default 0° untuk Board, 90° untuk PlayerHand
 
         // Constructor utama dengan index (untuk load image)
