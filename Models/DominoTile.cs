@@ -1,127 +1,95 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
-using System.Windows.Controls;
-using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 
 namespace DominoGame.Models
 {
-    public class DominoTile
+    public class DominoTile : INotifyPropertyChanged
     {
-        // === PROPERTIES ===
-        public int Left { get; private set; }
-        public int Right { get; private set; }
+        public event PropertyChangedEventHandler PropertyChanged;
 
-        private readonly BitmapImage _originalImage;
+        private int left;
+        private int right;
+        private double rotationAngle;
+        private bool isFlipped;
 
-        public bool IsDouble => Left == Right;
+        public int Left
+        {
+            get => left;
+            set { left = value; OnPropertyChanged(nameof(Left)); }
+        }
+
+        public int Right
+        {
+            get => right;
+            set { right = value; OnPropertyChanged(nameof(Right)); }
+        }
+        public bool Matches(int number) => Left == number || Right == number;
+
+        public int OriginalLeft { get; private set; }
+        public int OriginalRight { get; private set; }
+
+        private BitmapImage _originalImage;
+        public BitmapImage DisplayImage
+        {
+            get => _originalImage;
+            private set { _originalImage = value; OnPropertyChanged(nameof(DisplayImage)); }
+        }
+
+        public bool IsDouble => OriginalLeft == OriginalRight;
         public int TotalPip => Left + Right;
 
-        // Rotasi default 0°; double tile default 90°
-        public double RotationAngle { get; set; } = 0;
+        public double RotationAngle
+        {
+            get => rotationAngle;
+            set { rotationAngle = value; OnPropertyChanged(nameof(RotationAngle)); }
+        }
 
-        // Flag untuk flip horizontal (visual)
-        public bool IsFlipped { get; set; } = false;
+        public bool IsFlipped
+        {
+            get => isFlipped;
+            set { isFlipped = value; OnPropertyChanged(nameof(IsFlipped)); }
+        }
 
-        /// <summary>
-        /// Gambar tile (tidak perlu load flipped lagi)
-        /// </summary>
-        public BitmapImage DisplayImage => _originalImage;
-
-        // === CONSTRUCTORS ===
         public DominoTile(int left, int right)
         {
-            Left = left;
-            Right = right;
-            _originalImage = LoadImage(left, right);
-
-            if (IsDouble)
-                RotationAngle = 90;
+            Left = OriginalLeft = left;
+            Right = OriginalRight = right;
+            DisplayImage = LoadImage(left, right);
+            if (IsDouble) RotationAngle = 90;
         }
 
-        public DominoTile(int left, int right, BitmapImage image)
-        {
-            Left = left;
-            Right = right;
-            _originalImage = image;
-
-            if (IsDouble)
-                RotationAngle = 90;
-        }
-
-        // === METHODS ===
-
-        /// <summary>
-        /// Mengembalikan tile baru dengan sisi dibalik
-        /// </summary>
-        public DominoTile FlippedTile() => new DominoTile(Right, Left, _originalImage)
-        {
-            RotationAngle = this.RotationAngle,
-            IsFlipped = !this.IsFlipped
-        };
-
-        /// <summary>
-        /// Membalik sisi tile saat ini (in-place)
-        /// </summary>
         public void Flip()
         {
             (Left, Right) = (Right, Left);
             IsFlipped = !IsFlipped;
         }
 
-        /// <summary>
-        /// Cek apakah tile cocok dengan angka tertentu
-        /// </summary>
-        public bool Matches(int number) => Left == number || Right == number;
-
-        /// <summary>
-        /// Rotasi dengan animasi pada Image UI
-        /// </summary>
-        public void RotateWithAnimation(Image image, double toAngle)
+        public void ResetOrientation()
         {
-            var rotateTransform = new System.Windows.Media.RotateTransform(RotationAngle);
-            image.RenderTransform = rotateTransform;
-            image.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
-
-            var animation = new DoubleAnimation
-            {
-                From = RotationAngle,
-                To = toAngle,
-                Duration = TimeSpan.FromMilliseconds(400),
-                EasingFunction = new System.Windows.Media.Animation.QuadraticEase { EasingMode = System.Windows.Media.Animation.EasingMode.EaseInOut }
-            };
-
-            rotateTransform.BeginAnimation(System.Windows.Media.RotateTransform.AngleProperty, animation);
-            RotationAngle = toAngle;
+            Left = OriginalLeft;
+            Right = OriginalRight;
+            IsFlipped = false;
+            RotationAngle = IsDouble ? 90 : 0;
         }
 
-        /// <summary>
-        /// Load image dari folder Assets
-        /// </summary>
         private BitmapImage LoadImage(int left, int right)
         {
-            try
-            {
-                string fileName = $"{left}_{right}.png";
-                string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
+            string fileName = $"{left}_{right}.png";
+            string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
+            if (!File.Exists(path)) return null;
 
-                if (!File.Exists(path))
-                    throw new FileNotFoundException($"⚠️ Asset not found: {path}");
-
-                var bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.UriSource = new Uri(path, UriKind.Absolute);
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.EndInit();
-                return bmp;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-                return null;
-            }
+            var bmp = new BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri(path, UriKind.Absolute);
+            bmp.CacheOption = BitmapCacheOption.OnLoad;
+            bmp.EndInit();
+            bmp.Freeze(); // ✅ Freeze supaya aman di UI thread
+            return bmp;
         }
 
-        public override string ToString() => $"[{Left}|{Right}]";
+        private void OnPropertyChanged(string propName)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
     }
 }

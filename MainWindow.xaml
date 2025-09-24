@@ -8,27 +8,23 @@
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E">
 
-    <!-- ======================== RESOURCES ======================== -->
     <Window.Resources>
-
-        <!-- ======================== CONVERTERS ======================== -->
+        <!-- Converters -->
         <conv:TileSizeConverter x:Key="TileSizeConverter" NormalWidth="60" NormalHeight="120"/>
         <conv:TileHighlightConverter x:Key="TileHighlightConverter"/>
         <conv:TilePlayableConverter x:Key="TilePlayableConverter"/>
         <conv:TilePlayableOpacityConverter x:Key="TilePlayableOpacityConverter"/>
         <conv:BoolToScaleXConverter x:Key="BoolToScaleXConverter"/>
 
-        <!-- ======================== STYLES =========================== -->
+        <!-- Tile Style -->
         <Style x:Key="TileImageStyle" TargetType="Image">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Stretch" Value="Uniform"/>
         </Style>
 
-        <!-- ======================== PLAYER TILE TEMPLATE ============= -->
+        <!-- Player Tile Template -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
             <Button Margin="4" Padding="6" Background="#2D2D30" Click="TileButton_Click">
-
-                <!-- Enable/Disable tile based on game state -->
                 <Button.IsEnabled>
                     <MultiBinding Converter="{StaticResource TilePlayableConverter}">
                         <Binding/>
@@ -38,8 +34,6 @@
                 </Button.IsEnabled>
 
                 <Border CornerRadius="6" Padding="2">
-
-                    <!-- Tile highlight -->
                     <Border.Background>
                         <MultiBinding Converter="{StaticResource TileHighlightConverter}">
                             <Binding/>
@@ -48,7 +42,6 @@
                         </MultiBinding>
                     </Border.Background>
 
-                    <!-- Tile opacity -->
                     <Border.Opacity>
                         <MultiBinding Converter="{StaticResource TilePlayableOpacityConverter}">
                             <Binding/>
@@ -57,39 +50,44 @@
                         </MultiBinding>
                     </Border.Opacity>
 
-                    <!-- Tile image with dynamic size, rotation & flip -->
                     <Image Source="{Binding DisplayImage}" Style="{StaticResource TileImageStyle}">
-
-                        <!-- Width and Height disesuaikan dengan orientasi tile -->
                         <Image.Width>
-                            <Binding Path="RotationAngle"
-                                     Converter="{StaticResource TileSizeConverter}"
-                                     ConverterParameter="Width"/>
+                            <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Width"/>
                         </Image.Width>
                         <Image.Height>
-                            <Binding Path="RotationAngle"
-                                     Converter="{StaticResource TileSizeConverter}"
-                                     ConverterParameter="Height"/>
+                            <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Height"/>
                         </Image.Height>
-
-                        <!-- Rotasi dan flip -->
                         <Image.RenderTransform>
                             <TransformGroup>
                                 <RotateTransform Angle="{Binding RotationAngle}"/>
                                 <ScaleTransform ScaleX="{Binding IsFlipped, Converter={StaticResource BoolToScaleXConverter}}" ScaleY="1"/>
                             </TransformGroup>
                         </Image.RenderTransform>
-
                     </Image>
-
                 </Border>
             </Button>
         </DataTemplate>
+
+        <!-- Board Tile Template -->
+        <DataTemplate x:Key="BoardTileTemplate" DataType="{x:Type models:DominoTile}">
+            <Image Source="{Binding DisplayImage}" Style="{StaticResource TileImageStyle}">
+                <Image.Width>
+                    <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Width"/>
+                </Image.Width>
+                <Image.Height>
+                    <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Height"/>
+                </Image.Height>
+                <Image.RenderTransform>
+                    <TransformGroup>
+                        <RotateTransform Angle="{Binding RotationAngle}"/>
+                        <ScaleTransform ScaleX="{Binding IsFlipped, Converter={StaticResource BoolToScaleXConverter}}" ScaleY="1"/>
+                    </TransformGroup>
+                </Image.RenderTransform>
+            </Image>
+        </DataTemplate>
     </Window.Resources>
 
-    <!-- ======================== MAIN LAYOUT ======================= -->
     <DockPanel LastChildFill="True" Margin="10">
-
         <!-- Title & Status -->
         <StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
             <TextBlock Text="Domino Block Game" FontSize="22" FontWeight="Bold" Foreground="#FFD700"/>
@@ -99,14 +97,20 @@
         <!-- Board Tiles -->
         <Border DockPanel.Dock="Top" Background="#2D2D30" CornerRadius="8" Padding="10" Margin="0,0,0,10">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <Canvas x:Name="BoardTiles" Background="Transparent"/>
+                <ItemsControl x:Name="BoardItemsControl" ItemTemplate="{StaticResource BoardTileTemplate}" ItemsSource="{Binding Board}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
             </ScrollViewer>
         </Border>
 
         <!-- Player Hand -->
         <Border DockPanel.Dock="Bottom" Background="#252526" CornerRadius="8" Padding="10" Margin="0,10,0,0">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="PlayerHand" ItemTemplate="{StaticResource PlayerTileTemplate}">
+                <ItemsControl x:Name="PlayerHand" ItemTemplate="{StaticResource PlayerTileTemplate}" ItemsSource="{Binding CurrentPlayer.Hand}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
@@ -115,6 +119,5 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
-
     </DockPanel>
 </Window>

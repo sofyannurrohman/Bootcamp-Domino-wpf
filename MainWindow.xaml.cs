@@ -10,9 +10,6 @@ namespace DominoGameWPF
 {
     public partial class MainWindow : Window
     {
-        private const double TileSpacing = 5;
-        private const double MaxRowWidth = 800;
-
         public DominoGameController Game { get; private set; }
 
         public MainWindow()
@@ -20,6 +17,8 @@ namespace DominoGameWPF
             InitializeComponent();
             InitializeGame();
         }
+
+        #region Initialization
 
         private void InitializeGame()
         {
@@ -42,113 +41,39 @@ namespace DominoGameWPF
 
         private void Game_OnGameOver(Player winner)
         {
-            // Ranking berdasarkan sisa point tangan
+            ShowGameOverMessage(winner);
+            InitializeGame();
+        }
+
+        private void ShowGameOverMessage(Player winner)
+        {
             var ranking = Game.Players
                 .Select(p => new { p.Name, Points = p.Hand.Sum(t => t.TotalPip) })
                 .OrderBy(p => p.Points)
                 .ToList();
 
             string message = $"Game Over! Winner: {winner.Name}\n\nRanking:\n";
-            int rank = 1;
-            foreach (var p in ranking)
-            {
-                message += $"{rank}. {p.Name} - {p.Points} points\n";
-                rank++;
-            }
+            for (int i = 0; i < ranking.Count; i++)
+                message += $"{i + 1}. {ranking[i].Name} - {ranking[i].Points} points\n";
 
             MessageBox.Show(message, "Domino Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            InitializeGame();
         }
+
+        #endregion
+
+        #region UI Refresh
 
         private void RefreshUI()
         {
+            // Bind player hand
             PlayerHand.ItemsSource = null;
             PlayerHand.ItemsSource = Game.CurrentPlayer.Hand;
-            RenderBoard();
+
+            // Bind board items
+            BoardItemsControl.ItemsSource = null;
+            BoardItemsControl.ItemsSource = Game.Board;
+
             StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
-        }
-
-        #region Board Rendering
-
-        private void RenderBoard()
-        {
-            BoardTiles.Children.Clear();
-            if (!Game.Board.Any()) return;
-
-            double x = 0, y = 0, rowHeight = 0;
-            int? prevRight = null;
-
-            foreach (var tile in Game.Board)
-            {
-                SetTileRotationAndFlip(tile, prevRight);
-                prevRight = tile.Right;
-
-                var (tileWidth, tileHeight) = GetTileDimensions(tile);
-
-                if (x + tileWidth > MaxRowWidth)
-                {
-                    x = 0;
-                    y += rowHeight + TileSpacing;
-                    rowHeight = 0;
-                }
-
-                rowHeight = Math.Max(rowHeight, tileHeight);
-
-                // Gunakan Image langsung untuk board agar tidak clickable
-                var boardTile = CreateBoardTile(tile, tileWidth, tileHeight);
-                Canvas.SetLeft(boardTile, x);
-                Canvas.SetTop(boardTile, y);
-                BoardTiles.Children.Add(boardTile);
-
-                x += tileWidth + TileSpacing;
-            }
-
-            BoardTiles.Height = y + rowHeight + TileSpacing;
-        }
-
-        private (double width, double height) GetTileDimensions(DominoTile tile)
-            => tile.RotationAngle == 90 ? (60, 120) : (120, 60);
-
-        private void SetTileRotationAndFlip(DominoTile tile, int? prevRight)
-        {
-            tile.IsFlipped = false;
-
-            if (tile.IsDouble)
-                tile.RotationAngle = 90;
-            else if (prevRight.HasValue)
-            {
-                if (tile.Left == prevRight.Value)
-                    tile.RotationAngle = 0;
-                else if (tile.Right == prevRight.Value)
-                {
-                    tile.RotationAngle = 0;
-                    tile.Flip();
-                }
-                else
-                    tile.RotationAngle = 180;
-            }
-            else
-                tile.RotationAngle = 0;
-        }
-
-        private Image CreateBoardTile(DominoTile tile, double width, double height)
-        {
-            return new Image
-            {
-                Source = tile.DisplayImage,
-                Width = width,
-                Height = height,
-                RenderTransformOrigin = new Point(0.5, 0.5),
-                RenderTransform = new TransformGroup
-                {
-                    Children =
-                    {
-                        new RotateTransform(tile.RotationAngle),
-                        new ScaleTransform { ScaleX = tile.IsFlipped ? -1 : 1, ScaleY = 1 }
-                    }
-                }
-            };
         }
 
         #endregion
@@ -165,8 +90,8 @@ namespace DominoGameWPF
 
         private void PlayTileForCurrentPlayer(DominoTile tile)
         {
+            // Coba mainkan di kiri atau kanan
             bool played = Game.PlayTile(tile, true) || Game.PlayTile(tile, false);
-
             if (!played)
             {
                 StatusText.Text = "Cannot play this tile!";
@@ -234,10 +159,8 @@ namespace DominoGameWPF
 
         private bool CheckGameOver()
         {
-            // Jika board kosong, game belum selesai
             if (!Game.Board.Any()) return false;
 
-            // Jika semua player tidak bisa main, game over
             if (Game.Players.All(p => !HasPlayableTile(p)))
             {
                 var winner = GetWinnerByPoints();
