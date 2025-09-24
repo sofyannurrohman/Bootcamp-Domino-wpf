@@ -26,6 +26,9 @@ namespace DominoGame.Controllers
 
         public void StartGame()
         {
+            Root = null;
+            currentPlayerIndex = 0;
+
             var tiles = ShuffleTiles(GenerateTiles());
 
             var player1 = new Player("You");
@@ -36,10 +39,9 @@ namespace DominoGame.Controllers
             Players.Clear();
             Players.Add(player1);
             Players.Add(player2);
-
-            Root = null;
-            currentPlayerIndex = 0;
         }
+
+        #region Tile Management
 
         private List<DominoTile> GenerateTiles()
         {
@@ -52,41 +54,38 @@ namespace DominoGame.Controllers
 
         private List<DominoTile> ShuffleTiles(List<DominoTile> tiles)
         {
-            var rnd = new Random();
+            var rnd = new Random(Guid.NewGuid().GetHashCode());
             return tiles.OrderBy(_ => rnd.Next()).ToList();
         }
 
         private void DealTiles(List<DominoTile> tiles, Player player1, Player player2)
         {
-            player1.Hand.AddRange(tiles.Take(7));
-            player2.Hand.AddRange(tiles.Skip(7).Take(7));
+            const int handSize = 7;
+            player1.Hand.AddRange(tiles.Take(handSize));
+            player2.Hand.AddRange(tiles.Skip(handSize).Take(handSize));
         }
 
         public bool PlayTile(DominoTile tile, bool placeLeft)
         {
-            if (Root == null)
-            {
-                tile.RotationAngle = tile.IsDouble ? 90 : 0;
-                Root = new BoardNode(tile);
-                CurrentPlayer.Hand.Remove(tile);
-                OnTilePlayed?.Invoke(CurrentPlayer, tile, placeLeft);
-                return true;
-            }
-
-            var targetNode = placeLeft ? GetLeftMost(Root) : GetRightMost(Root);
-            int numberToMatch = placeLeft ? targetNode.Tile.Left : targetNode.Tile.Right;
-
-            if (!tile.Matches(numberToMatch))
+            if (!CanPlaceTile(tile, placeLeft))
                 return false;
 
-            var playTile = PrepareTileForPlay(tile, numberToMatch, placeLeft);
+            var nodeToAttach = Root == null ? null : (placeLeft ? GetLeftMost(Root) : GetRightMost(Root));
+            if (Root == null)
+            {
+                Root = new BoardNode(tile);
+            }
+            else
+            {
+                var playTile = PrepareTileForPlay(tile, placeLeft ? nodeToAttach!.Tile.Left : nodeToAttach!.Tile.Right, placeLeft);
+                var newNode = new BoardNode(playTile);
 
-            var newNode = new BoardNode(playTile);
-            if (placeLeft) targetNode.Left = newNode;
-            else targetNode.Right = newNode;
+                if (placeLeft) nodeToAttach!.Left = newNode;
+                else nodeToAttach!.Right = newNode;
+            }
 
             CurrentPlayer.Hand.Remove(tile);
-            OnTilePlayed?.Invoke(CurrentPlayer, playTile, placeLeft);
+            OnTilePlayed?.Invoke(CurrentPlayer, tile, placeLeft);
 
             if (IsGameOver())
                 OnGameOver?.Invoke(GetWinner());
@@ -94,15 +93,28 @@ namespace DominoGame.Controllers
             return true;
         }
 
+        private bool CanPlaceTile(DominoTile tile, bool placeLeft)
+        {
+            if (Root == null) return true;
+
+            var targetNode = placeLeft ? GetLeftMost(Root) : GetRightMost(Root);
+            int numberToMatch = placeLeft ? targetNode.Tile.Left : targetNode.Tile.Right;
+
+            return tile.Matches(numberToMatch);
+        }
+
         private DominoTile PrepareTileForPlay(DominoTile tile, int numberToMatch, bool placeLeft)
         {
-            // Flip jika perlu
             if ((placeLeft && tile.Right != numberToMatch) || (!placeLeft && tile.Left != numberToMatch))
                 tile.Flip();
 
             tile.RotationAngle = tile.IsDouble ? 90 : 0;
             return tile;
         }
+
+        #endregion
+
+        #region Board Helpers
 
         private BoardNode GetLeftMost(BoardNode node)
         {
@@ -115,6 +127,31 @@ namespace DominoGame.Controllers
             while (node.Right != null) node = node.Right;
             return node;
         }
+
+        public IEnumerable<DominoTile> GetAllTiles()
+        {
+            if (Root == null) yield break;
+
+            foreach (var tile in Traverse(Root))
+                yield return tile;
+        }
+
+        private IEnumerable<DominoTile> Traverse(BoardNode node)
+        {
+            if (node.Left != null)
+                foreach (var t in Traverse(node.Left))
+                    yield return t;
+
+            yield return node.Tile;
+
+            if (node.Right != null)
+                foreach (var t in Traverse(node.Right))
+                    yield return t;
+        }
+
+        #endregion
+
+        #region Game Flow
 
         public void NextTurn()
         {
@@ -137,23 +174,6 @@ namespace DominoGame.Controllers
             return Players.OrderBy(p => p.Hand.Sum(t => t.Left + t.Right)).First();
         }
 
-        public IEnumerable<DominoTile> GetAllTiles()
-        {
-            if (Root == null) yield break;
-            foreach (var t in Traverse(Root)) yield return t;
-        }
-
-        private IEnumerable<DominoTile> Traverse(BoardNode node)
-        {
-            if (node.Left != null)
-                foreach (var t in Traverse(node.Left))
-                    yield return t;
-
-            yield return node.Tile;
-
-            if (node.Right != null)
-                foreach (var t in Traverse(node.Right))
-                    yield return t;
-        }
+        #endregion
     }
 }

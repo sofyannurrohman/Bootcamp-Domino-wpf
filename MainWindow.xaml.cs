@@ -4,13 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace DominoGameWPF
 {
     public partial class MainWindow : Window
     {
         public DominoGameController Game { get; private set; }
+        private TaskCompletionSource<bool> _humanTurnTcs;
 
         public MainWindow()
         {
@@ -29,8 +29,7 @@ namespace DominoGameWPF
             Game.StartGame();
             RefreshUI();
 
-            if (IsComputerTurn())
-                _ = ComputerMoveAsync();
+            _ = GameLoopAsync(); // start the game loop
         }
 
         private void Game_OnTilePlayed(Player player, DominoTile tile, bool placedLeft)
@@ -65,15 +64,11 @@ namespace DominoGameWPF
 
         private void RefreshUI()
         {
-            // Bind player hand
             PlayerHand.ItemsSource = null;
             PlayerHand.ItemsSource = Game.CurrentPlayer.Hand;
 
-            // Bind board items
             BoardItemsControl.ItemsSource = null;
             BoardItemsControl.ItemsSource = Game.Board;
-
-            StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
         }
 
         #endregion
@@ -82,78 +77,103 @@ namespace DominoGameWPF
 
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
-            if (IsComputerTurn()) return;
+            if (!IsHumanTurn()) return; // ignore clicks when not human turn
+            if (!(sender is Button btn && btn.DataContext is DominoTile tile)) return;
 
-            if (sender is Button btn && btn.DataContext is DominoTile tile)
-                PlayTileForCurrentPlayer(tile);
-        }
-
-        private void PlayTileForCurrentPlayer(DominoTile tile)
-        {
-            // Coba mainkan di kiri atau kanan
             bool played = Game.PlayTile(tile, true) || Game.PlayTile(tile, false);
+
             if (!played)
             {
                 StatusText.Text = "Cannot play this tile!";
-                SkipTurnIfNoPlayableTile();
                 return;
             }
 
-            ProcessTurn();
+            // Signal that human has played and end their turn
+            _humanTurnTcs?.TrySetResult(true);
         }
 
-        private void ProcessTurn()
+        #endregion
+
+        #region Game Loop
+
+        private async Task GameLoopAsync()
         {
-            if (CheckGameOver()) return;
-
-            Game.NextTurn();
-            RefreshUI();
-
-            if (IsComputerTurn())
-                _ = ComputerMoveAsync();
-        }
-
-        private async Task ComputerMoveAsync()
-        {
-            await Task.Delay(1000);
-
-            while (IsComputerTurn())
+            while (!CheckGameOver())
             {
-                var tile = GetPlayableTile(Game.CurrentPlayer);
+                RefreshUI();
 
-                if (tile != null)
+                // Skip turn if current player cannot play
+                if (!HasPlayableTile(Game.CurrentPlayer))
                 {
-                    PlayTileForCurrentPlayer(tile);
+                    StatusText.Text = IsComputerTurn()
+                        ? "Computer cannot play, skipping turn..."
+                        : $"{Game.CurrentPlayer.Name} cannot play, skipping turn...";
+
+                    await Task.Delay(800);
+                    Game.NextTurn();
+                    continue;
+                }
+
+                if (IsComputerTurn())
+                {
+                    await ComputerTurnAsync();
+                    Game.NextTurn();
+                }
+                else
+                {
+                    // Human turn
+                    _humanTurnTcs = new TaskCompletionSource<bool>();
+                    StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
+
+                    await _humanTurnTcs.Task; // wait for human input
+                    Game.NextTurn();
+                }
+            }
+        }
+
+        private async Task ComputerTurnAsync()
+        {
+            await Task.Delay(500); // simulate thinking
+            var tile = GetPlayableTile(Game.CurrentPlayer);
+
+            if (tile != null)
+            {
+                bool played = Game.PlayTile(tile, true) || Game.PlayTile(tile, false);
+                if (played)
+                {
+                    StatusText.Text = $"Computer played [{tile.Left}|{tile.Right}]";
+                    RefreshUI();
                     await Task.Delay(500);
                 }
                 else
                 {
-                    StatusText.Text = "Computer cannot play, skipping turn...";
-                    Game.NextTurn();
+                    // Remove unplayable tile to prevent infinite loop
+                    Game.CurrentPlayer.Hand.Remove(tile);
+                    StatusText.Text = $"Computer cannot play [{tile.Left}|{tile.Right}], skipping...";
                     RefreshUI();
-                    if (CheckGameOver()) return;
                     await Task.Delay(500);
                 }
             }
         }
 
+        #endregion
+
+        #region Helpers
+
         private DominoTile GetPlayableTile(Player player)
         {
             if (!Game.Board.Any()) return player.Hand.FirstOrDefault();
-
             int leftEnd = Game.Board.First().Left;
             int rightEnd = Game.Board.Last().Right;
-
             return player.Hand.FirstOrDefault(t => t.Matches(leftEnd) || t.Matches(rightEnd));
         }
 
         private bool HasPlayableTile(Player player)
         {
+            if (!player.Hand.Any()) return false;
             if (!Game.Board.Any()) return true;
-
             int leftEnd = Game.Board.First().Left;
             int rightEnd = Game.Board.Last().Right;
-
             return player.Hand.Any(t => t.Matches(leftEnd) || t.Matches(rightEnd));
         }
 
@@ -163,7 +183,7 @@ namespace DominoGameWPF
 
             if (Game.Players.All(p => !HasPlayableTile(p)))
             {
-                var winner = GetWinnerByPoints();
+                var winner = Game.Players.OrderBy(p => p.Hand.Sum(t => t.TotalPip)).First();
                 Game_OnGameOver(winner);
                 return true;
             }
@@ -171,24 +191,8 @@ namespace DominoGameWPF
             return false;
         }
 
-        private Player GetWinnerByPoints()
-            => Game.Players.OrderBy(p => p.Hand.Sum(t => t.TotalPip)).First();
-
-        private void SkipTurnIfNoPlayableTile()
-        {
-            if (HasPlayableTile(Game.CurrentPlayer)) return;
-
-            StatusText.Text = $"{Game.CurrentPlayer.Name} cannot play, skipping turn...";
-            Game.NextTurn();
-            RefreshUI();
-
-            if (CheckGameOver()) return;
-
-            if (IsComputerTurn())
-                _ = ComputerMoveAsync();
-        }
-
         private bool IsComputerTurn() => Game.CurrentPlayer.Name == "Computer";
+        private bool IsHumanTurn() => !IsComputerTurn();
 
         #endregion
     }
