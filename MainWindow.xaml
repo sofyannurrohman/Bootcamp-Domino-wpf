@@ -34,7 +34,7 @@
 
         <!-- Player Hand Tiles Template -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
-            <Button Margin="4" Padding="0" Background="#2D2D30" Click="TileButton_Click">
+            <Button Margin="4" Padding="10" Background="#2D2D30" Click="TileButton_Click">
                 <!-- Enable button only if tile is playable -->
                 <Button.IsEnabled>
                     <MultiBinding Converter="{StaticResource TilePlayableConverter}">

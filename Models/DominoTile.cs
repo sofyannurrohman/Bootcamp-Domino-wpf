@@ -9,31 +9,34 @@ namespace DominoGame.Models
         public int Left { get; }
         public int Right { get; }
         public BitmapImage Image { get; }
+        public bool IsDouble => Left == Right;
 
         public double RotationAngle { get; set; } = 0; // default 0° untuk Board, 90° untuk PlayerHand
 
-        // Constructor utama dengan index (untuk load image)
-        public DominoTile(int left, int right, int index)
+        // Constructor utama (load image berdasarkan nilai Left & Right)
+        public DominoTile(int left, int right)
         {
             Left = left;
             Right = right;
 
-            if (index > 0)
-            {
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", $"{index}.png");
+            var fileName = $"{left}_{right}.png";
+            var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
 
-                if (File.Exists(path))
-                {
-                    Image = new BitmapImage();
-                    Image.BeginInit();
-                    Image.UriSource = new Uri(path, UriKind.Absolute);
-                    Image.CacheOption = BitmapCacheOption.OnLoad;
-                    Image.EndInit();
-                }
+            if (File.Exists(path))
+            {
+                Image = new BitmapImage();
+                Image.BeginInit();
+                Image.UriSource = new Uri(path, UriKind.Absolute);
+                Image.CacheOption = BitmapCacheOption.OnLoad;
+                Image.EndInit();
+            }
+            else
+            {
+                Console.WriteLine($"⚠️ Asset not found: {path}");
             }
         }
 
-        // Constructor baru: buat tile dari Left, Right dan image yang sudah ada
+        // Constructor dari image yang sudah ada
         public DominoTile(int left, int right, BitmapImage image)
         {
             Left = left;

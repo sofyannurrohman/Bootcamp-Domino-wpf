@@ -38,15 +38,17 @@ namespace DominoGame.Controllers
             currentPlayerIndex = 0;
         }
 
+        /// <summary>
+        /// Generate standard double-six domino tiles (0-0 up to 6-6).
+        /// </summary>
         private List<DominoTile> GenerateTiles()
         {
             var tiles = new List<DominoTile>();
-            int index = 1;
             for (int i = 0; i <= 6; i++)
             {
                 for (int j = i; j <= 6; j++)
                 {
-                    tiles.Add(new DominoTile(i, j, index++));
+                    tiles.Add(new DominoTile(i, j));
                 }
             }
             return tiles;
@@ -153,17 +155,6 @@ namespace DominoGame.Controllers
         {
             // Player with least sum of tile pips wins
             return Players.OrderBy(p => p.Hand.Sum(t => t.Left + t.Right)).First();
-        }
-    }
-
-    public static class DominoTileExtensions
-    {
-        public static DominoTile FlippedTile(this DominoTile tile)
-        {
-            return new DominoTile(tile.Right, tile.Left, -1)
-            {
-                RotationAngle = tile.RotationAngle
-            };
         }
     }
 }
