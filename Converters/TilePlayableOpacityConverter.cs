@@ -2,33 +2,36 @@
 using System.Globalization;
 using System.Windows.Data;
 using DominoGame.Models;
-using DominoGame.Controllers;
+using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
     public class TilePlayableOpacityConverter : IMultiValueConverter
     {
+        private const double FullyVisible = 1.0;
+        private const double Dimmed = 0.5;
+
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length < 2) return 0.5;
+            // Expecting: [DominoTile, Player, Board]
+            if (values is null || values.Length != 3)
+                return Dimmed;
 
-            if (values[0] is DominoTile tile && values[1] is DominoGameController game)
-            {
-                if (game.Board.Count == 0) return 1.0; // first tile is always playable
+            if (values[0] is not DominoTile tile) return Dimmed;
+            if (values[1] is not Player currentPlayer) return Dimmed;
+            if (values[2] is not IBoard board) return Dimmed;
 
-                int leftEnd = game.Board.First().Left;
-                int rightEnd = game.Board.Last().Right;
+            // Opening move: all tiles fully visible
+            if (board.Tiles.Count == 0)
+                return FullyVisible;
 
-                bool playable = tile.Matches(leftEnd) || tile.Matches(rightEnd);
-                return playable ? 1.0 : 1.0; // full opacity for playable tiles
-            }
-
-            return 1.0;
+            // Regular move: fully visible if playable, otherwise dimmed
+            return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)
+                ? FullyVisible
+                : Dimmed;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotSupportedException("TilePlayableOpacityConverter does not support ConvertBack.");
     }
 }

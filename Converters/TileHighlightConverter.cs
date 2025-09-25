@@ -1,37 +1,46 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media;
 using DominoGame.Models;
-using DominoGame.Controllers;
+using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
     public class TileHighlightConverter : IMultiValueConverter
     {
-        private static readonly Brush HighlightBrush = new SolidColorBrush(Color.FromRgb(0x4C, 0xAF, 0x50)); // Green
-        private static readonly Brush NormalBrush = new SolidColorBrush(Color.FromRgb(0x3C, 0x3C, 0x3C)); // Gray
+        private static readonly Brush HighlightBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C)); // Green
+        private static readonly Brush NormalBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C));    // Gray
+
+        private static Brush CreateFrozenBrush(Color color)
+        {
+            var brush = new SolidColorBrush(color);
+            brush.Freeze();
+            return brush;
+        }
 
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values.Length < 2 || values[0] == null || values[1] == null)
+            // Expecting: [DominoTile, Player, Board]
+            if (values is null || values.Length != 3)
                 return NormalBrush;
 
-            var tile = values[0] as DominoTile;
-            var controller = values[1] as DominoGameController;
+            if (values[0] is not DominoTile tile) return NormalBrush;
+            if (values[1] is not Player) return NormalBrush; // currently unused, signature for MultiBinding
+            if (values[2] is not IBoard board) return NormalBrush;
 
-            if (tile == null || controller == null) return NormalBrush;
+            var tiles = board.Tiles;
+            if (tiles == null || tiles.Count == 0)
+                return HighlightBrush; // first move: highlight all tiles
 
-            if (controller.Board.Count == 0)
-                return HighlightBrush;
-
-            int leftEnd = controller.Board.First().Left;
-            int rightEnd = controller.Board.Last().Right;
-
-            return tile.Matches(leftEnd) || tile.Matches(rightEnd) ? HighlightBrush : NormalBrush;
+            // Highlight if tile matches either end of the board
+            return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)
+                ? HighlightBrush
+                : NormalBrush;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-            => throw new NotImplementedException();
+            => throw new NotSupportedException("TileHighlightConverter does not support ConvertBack.");
     }
 }

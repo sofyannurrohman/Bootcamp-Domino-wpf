@@ -10,7 +10,7 @@ namespace DominoGameWPF
     public partial class MainWindow : Window
     {
         public DominoGameController Game { get; private set; }
-        private TaskCompletionSource<bool> _humanTurnTcs;
+        private TaskCompletionSource<bool>? _humanTurnTcs;
 
         public MainWindow()
         {
@@ -26,10 +26,12 @@ namespace DominoGameWPF
             Game.OnTilePlayed += Game_OnTilePlayed;
             Game.OnGameOver += Game_OnGameOver;
 
+            DataContext = Game; // ✅ Bind once here
+
             Game.StartGame();
             RefreshUI();
 
-            _ = GameLoopAsync(); // start the game loop
+            _ = GameLoopAsync(); // start game loop
         }
 
         private void Game_OnTilePlayed(Player player, DominoTile tile, bool placedLeft)
@@ -64,11 +66,12 @@ namespace DominoGameWPF
 
         private void RefreshUI()
         {
+            // Only update dynamic parts (like player's hand).
             PlayerHand.ItemsSource = null;
             PlayerHand.ItemsSource = Game.CurrentPlayer.Hand;
 
-            BoardItemsControl.ItemsSource = null;
-            BoardItemsControl.ItemsSource = Game.Board;
+            // ❌ No need to reset BoardItemsControl anymore,
+            // since Board.Tiles is ObservableCollection and bound in XAML
         }
 
         #endregion
@@ -77,8 +80,8 @@ namespace DominoGameWPF
 
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
-            if (!IsHumanTurn()) return; // ignore clicks when not human turn
-            if (!(sender is Button btn && btn.DataContext is DominoTile tile)) return;
+            if (!IsHumanTurn()) return;
+            if (sender is not Button { DataContext: DominoTile tile }) return;
 
             bool played = Game.PlayTile(tile, true) || Game.PlayTile(tile, false);
 
@@ -88,8 +91,7 @@ namespace DominoGameWPF
                 return;
             }
 
-            // Signal that human has played and end their turn
-            _humanTurnTcs?.TrySetResult(true);
+            _humanTurnTcs?.TrySetResult(true); // signal human turn done
         }
 
         #endregion
@@ -102,7 +104,6 @@ namespace DominoGameWPF
             {
                 RefreshUI();
 
-                // Skip turn if current player cannot play
                 if (!HasPlayableTile(Game.CurrentPlayer))
                 {
                     StatusText.Text = IsComputerTurn()
@@ -121,11 +122,10 @@ namespace DominoGameWPF
                 }
                 else
                 {
-                    // Human turn
                     _humanTurnTcs = new TaskCompletionSource<bool>();
                     StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
 
-                    await _humanTurnTcs.Task; // wait for human input
+                    await _humanTurnTcs.Task; // wait for player
                     Game.NextTurn();
                 }
             }
@@ -133,7 +133,7 @@ namespace DominoGameWPF
 
         private async Task ComputerTurnAsync()
         {
-            await Task.Delay(500); // simulate thinking
+            await Task.Delay(500);
             var tile = GetPlayableTile(Game.CurrentPlayer);
 
             if (tile != null)
@@ -142,15 +142,12 @@ namespace DominoGameWPF
                 if (played)
                 {
                     StatusText.Text = $"Computer played [{tile.Left}|{tile.Right}]";
-                    RefreshUI();
                     await Task.Delay(500);
                 }
                 else
                 {
-                    // Remove unplayable tile to prevent infinite loop
-                    Game.CurrentPlayer.Hand.Remove(tile);
+                    Game.CurrentPlayer.Hand.Remove(tile); // prevent stuck loop
                     StatusText.Text = $"Computer cannot play [{tile.Left}|{tile.Right}], skipping...";
-                    RefreshUI();
                     await Task.Delay(500);
                 }
             }
@@ -160,11 +157,11 @@ namespace DominoGameWPF
 
         #region Helpers
 
-        private DominoTile GetPlayableTile(Player player)
+        private DominoTile? GetPlayableTile(Player player)
         {
             if (!Game.Board.Any()) return player.Hand.FirstOrDefault();
-            int leftEnd = Game.Board.First().Left;
-            int rightEnd = Game.Board.Last().Right;
+            int leftEnd = Game.Board.LeftEnd;
+            int rightEnd = Game.Board.RightEnd;
             return player.Hand.FirstOrDefault(t => t.Matches(leftEnd) || t.Matches(rightEnd));
         }
 
@@ -172,8 +169,8 @@ namespace DominoGameWPF
         {
             if (!player.Hand.Any()) return false;
             if (!Game.Board.Any()) return true;
-            int leftEnd = Game.Board.First().Left;
-            int rightEnd = Game.Board.Last().Right;
+            int leftEnd = Game.Board.LeftEnd;
+            int rightEnd = Game.Board.RightEnd;
             return player.Hand.Any(t => t.Matches(leftEnd) || t.Matches(rightEnd));
         }
 

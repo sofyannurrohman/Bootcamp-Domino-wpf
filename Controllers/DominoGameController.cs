@@ -8,29 +8,22 @@ namespace DominoGame.Controllers
 {
     public class DominoGameController : IGameController
     {
-        public BoardNode? Root { get; private set; }
+        public IBoard Board { get; private set; } = new Board();
         public List<Player> Players { get; } = new();
         private int currentPlayerIndex = 0;
 
-        public Player CurrentPlayer => Players[currentPlayerIndex];
+        public Player? CurrentPlayer => Players.Count > 0 ? Players[currentPlayerIndex] : null;
 
-        // Events
+
         public event Action<Player, DominoTile, bool>? OnTilePlayed;
         public event Action<Player>? OnGameOver;
 
-        // Board wrapper untuk UI lama
-        public List<DominoTile> Board => GetAllTiles().ToList();
-
-        public int LeftEnd => Root != null ? GetLeftMost(Root).Tile.Left : 0;
-        public int RightEnd => Root != null ? GetRightMost(Root).Tile.Right : 0;
-
         public void StartGame()
         {
-            Root = null;
+            Board.Clear();
             currentPlayerIndex = 0;
 
             var tiles = ShuffleTiles(GenerateTiles());
-
             var player1 = new Player("You");
             var player2 = new Player("Computer");
 
@@ -67,22 +60,8 @@ namespace DominoGame.Controllers
 
         public bool PlayTile(DominoTile tile, bool placeLeft)
         {
-            if (!CanPlaceTile(tile, placeLeft))
-                return false;
-
-            var nodeToAttach = Root == null ? null : (placeLeft ? GetLeftMost(Root) : GetRightMost(Root));
-            if (Root == null)
-            {
-                Root = new BoardNode(tile);
-            }
-            else
-            {
-                var playTile = PrepareTileForPlay(tile, placeLeft ? nodeToAttach!.Tile.Left : nodeToAttach!.Tile.Right, placeLeft);
-                var newNode = new BoardNode(playTile);
-
-                if (placeLeft) nodeToAttach!.Left = newNode;
-                else nodeToAttach!.Right = newNode;
-            }
+            bool success = Board.PlaceTile(tile, placeLeft);
+            if (!success) return false;
 
             CurrentPlayer.Hand.Remove(tile);
             OnTilePlayed?.Invoke(CurrentPlayer, tile, placeLeft);
@@ -91,62 +70,6 @@ namespace DominoGame.Controllers
                 OnGameOver?.Invoke(GetWinner());
 
             return true;
-        }
-
-        private bool CanPlaceTile(DominoTile tile, bool placeLeft)
-        {
-            if (Root == null) return true;
-
-            var targetNode = placeLeft ? GetLeftMost(Root) : GetRightMost(Root);
-            int numberToMatch = placeLeft ? targetNode.Tile.Left : targetNode.Tile.Right;
-
-            return tile.Matches(numberToMatch);
-        }
-
-        private DominoTile PrepareTileForPlay(DominoTile tile, int numberToMatch, bool placeLeft)
-        {
-            if ((placeLeft && tile.Right != numberToMatch) || (!placeLeft && tile.Left != numberToMatch))
-                tile.Flip();
-
-            tile.RotationAngle = tile.IsDouble ? 90 : 0;
-            return tile;
-        }
-
-        #endregion
-
-        #region Board Helpers
-
-        private BoardNode GetLeftMost(BoardNode node)
-        {
-            while (node.Left != null) node = node.Left;
-            return node;
-        }
-
-        private BoardNode GetRightMost(BoardNode node)
-        {
-            while (node.Right != null) node = node.Right;
-            return node;
-        }
-
-        public IEnumerable<DominoTile> GetAllTiles()
-        {
-            if (Root == null) yield break;
-
-            foreach (var tile in Traverse(Root))
-                yield return tile;
-        }
-
-        private IEnumerable<DominoTile> Traverse(BoardNode node)
-        {
-            if (node.Left != null)
-                foreach (var t in Traverse(node.Left))
-                    yield return t;
-
-            yield return node.Tile;
-
-            if (node.Right != null)
-                foreach (var t in Traverse(node.Right))
-                    yield return t;
         }
 
         #endregion
@@ -163,8 +86,8 @@ namespace DominoGame.Controllers
             if (Players.Any(p => p.Hand.Count == 0))
                 return true;
 
-            var leftEnd = LeftEnd;
-            var rightEnd = RightEnd;
+            var leftEnd = Board.LeftEnd;
+            var rightEnd = Board.RightEnd;
 
             return Players.All(p => !p.HasPlayableTile(leftEnd, rightEnd));
         }
