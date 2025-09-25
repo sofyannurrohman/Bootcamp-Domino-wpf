@@ -11,7 +11,6 @@
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E">
 
-    <!-- =================== Resources =================== -->
     <Window.Resources>
         <!-- Converters -->
         <conv:TileSizeConverter x:Key="TileSizeConverter" NormalWidth="60" NormalHeight="120"/>
@@ -20,7 +19,7 @@
         <conv:TilePlayableOpacityConverter x:Key="TilePlayableOpacityConverter"/>
         <conv:BoolToScaleXConverter x:Key="BoolToScaleXConverter"/>
 
-        <!-- Common Image Style for Tiles -->
+        <!-- Tile Image Style -->
         <Style x:Key="TileImageStyle" TargetType="Image">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Stretch" Value="Uniform"/>
@@ -29,40 +28,28 @@
         <!-- Player Tile Template -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
             <Button Margin="4" Padding="6" Background="#2D2D30" Click="TileButton_Click">
-                <!-- Enable only if tile is playable -->
                 <Button.IsEnabled>
                     <MultiBinding Converter="{StaticResource TilePlayableConverter}">
-                        <!-- Tile itself -->
                         <Binding />
-                        <!-- CurrentPlayer from Window DataContext -->
                         <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                        <!-- Board from Window DataContext -->
                         <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                     </MultiBinding>
                 </Button.IsEnabled>
-
                 <Border CornerRadius="6" Padding="2">
-                    <!-- Background Highlight -->
                     <Border.Background>
                         <MultiBinding Converter="{StaticResource TileHighlightConverter}">
                             <Binding />
-                            <!-- Tile -->
                             <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
                             <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                         </MultiBinding>
                     </Border.Background>
-
-                    <!-- Opacity Based on Playable -->
                     <Border.Opacity>
                         <MultiBinding Converter="{StaticResource TilePlayableOpacityConverter}">
                             <Binding />
-                            <!-- Tile -->
                             <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
                             <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                         </MultiBinding>
                     </Border.Opacity>
-
-                    <!-- Tile Image -->
                     <Image Source="{Binding DisplayImage}" Style="{StaticResource TileImageStyle}">
                         <Image.Width>
                             <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Width"/>
@@ -100,9 +87,8 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- =================== Layout =================== -->
     <DockPanel LastChildFill="True" Margin="10">
-        <!-- Title & Status -->
+        <!-- Top Panel: Title, Status, Round & Scores -->
         <StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
             <TextBlock Text="Domino Block Game"
                        FontSize="22"
@@ -112,6 +98,30 @@
                        FontSize="16"
                        Foreground="White"
                        Margin="0,5,0,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,5,0,0">
+                <TextBlock FontSize="16" Foreground="#00FF00">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="Round: {0}/{1}">
+                            <Binding Path="CurrentRound"/>
+                            <Binding Path="MaxRounds"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+                <ItemsControl ItemsSource="{Binding Players}" Margin="20,0,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock FontSize="16" Foreground="#00BFFF">
+                                <TextBlock.Text>
+                                    <MultiBinding StringFormat="{}{0}: {1} points">
+                                        <Binding Path="Name"/>
+                                        <Binding Path="Score"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
         </StackPanel>
 
         <!-- Board Tiles -->

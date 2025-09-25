@@ -10,8 +10,9 @@ namespace DominoGame.Converters
 {
     public class TileHighlightConverter : IMultiValueConverter
     {
-        private static readonly Brush HighlightBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C)); // Green
-        private static readonly Brush NormalBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C));    // Gray
+        // Frozen brushes for performance
+        private static readonly Brush HighlightBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C));
+        private static readonly Brush NormalBrush = CreateFrozenBrush(Color.FromRgb(0x2D, 0x2D, 0x30));
 
         private static Brush CreateFrozenBrush(Color color)
         {
@@ -20,19 +21,21 @@ namespace DominoGame.Converters
             return brush;
         }
 
+        /// <summary>
+        /// Returns the highlight brush if the tile is playable; otherwise normal brush.
+        /// Expects: [DominoTile, Player, Board]
+        /// </summary>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            // Expecting: [DominoTile, Player, Board]
-            if (values is null || values.Length != 3)
-                return NormalBrush;
+            if (values?.Length != 3) return NormalBrush;
 
             if (values[0] is not DominoTile tile) return NormalBrush;
-            if (values[1] is not Player) return NormalBrush; // currently unused, signature for MultiBinding
+            if (values[1] is not Player) return NormalBrush; // currently unused, kept for signature
             if (values[2] is not IBoard board) return NormalBrush;
 
-            var tiles = board.Tiles;
-            if (tiles == null || tiles.Count == 0)
-                return HighlightBrush; // first move: highlight all tiles
+            var boardTiles = board.Tiles;
+            if (boardTiles == null || boardTiles.Count == 0)
+                return HighlightBrush; // First move: highlight all tiles
 
             // Highlight if tile matches either end of the board
             return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)

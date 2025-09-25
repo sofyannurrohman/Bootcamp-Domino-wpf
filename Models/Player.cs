@@ -1,30 +1,48 @@
-﻿using System;
+﻿using DominoGame.Interfaces;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+
 namespace DominoGame.Models
-{       public class Player
+{
+    public class Player : IPlayer, INotifyPropertyChanged
+    {
+        private int _score;
+
+        public string Name { get; private set; }
+        public List<DominoTile> Hand { get; } = new();
+        public int Score
         {
-            public string Name { get; }
-            public List<DominoTile> Hand { get; } = new();
-
-            public Player(string name)
+            get => _score;
+            set
             {
-                Name = name;
-            }
-
-            public bool HasPlayableTile(int leftEnd, int rightEnd)
-            {
-                foreach (var tile in Hand)
+                if (_score != value)
                 {
-                    if (tile.Matches(leftEnd) || tile.Matches(rightEnd))
-                        return true;
+                    _score = value;
+                    OnPropertyChanged(nameof(Score));
                 }
-                return false;
             }
         }
+
+        public Player(string name)
+        {
+            Name = name;
+            Score = 0;
+        }
+
+        public bool HasPlayableTile(int leftEnd, int rightEnd)
+        {
+            return Hand.Any(tile => tile.Matches(leftEnd) || tile.Matches(rightEnd));
+        }
+
+        #region INotifyPropertyChanged
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+        protected void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
     }
-
-
+}

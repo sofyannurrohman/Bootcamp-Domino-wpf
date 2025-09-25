@@ -11,17 +11,20 @@ namespace DominoGame.Converters
         private const double FullyVisible = 1.0;
         private const double Dimmed = 0.5;
 
+        /// <summary>
+        /// Returns full opacity if the tile is playable, otherwise dimmed.
+        /// Expects: [DominoTile, Player, Board]
+        /// </summary>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            // Expecting: [DominoTile, Player, Board]
-            if (values is null || values.Length != 3)
+            if (values?.Length != 3)
                 return Dimmed;
 
             if (values[0] is not DominoTile tile) return Dimmed;
-            if (values[1] is not Player currentPlayer) return Dimmed;
+            if (values[1] is not Player) return Dimmed; // Player is unused, signature requirement
             if (values[2] is not IBoard board) return Dimmed;
 
-            // Opening move: all tiles fully visible
+            // First move: all tiles fully visible
             if (board.Tiles.Count == 0)
                 return FullyVisible;
 
