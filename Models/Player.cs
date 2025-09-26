@@ -1,7 +1,6 @@
 ﻿using DominoGame.Interfaces;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
 namespace DominoGame.Models
 {
@@ -11,6 +10,7 @@ namespace DominoGame.Models
 
         public string Name { get; private set; }
         public List<IDominoTile> Hand { get; } = new();
+
         public int Score
         {
             get => _score;
@@ -30,19 +30,10 @@ namespace DominoGame.Models
             Score = 0;
         }
 
-        public bool HasPlayableTile(int leftEnd, int rightEnd)
-        {
-            return Hand.Any(tile => tile.Matches(leftEnd) || tile.Matches(rightEnd));
-        }
-
         #region INotifyPropertyChanged
-
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string propertyName)
-        {
+        protected void OnPropertyChanged(string propertyName) =>
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
         #endregion
     }
 }

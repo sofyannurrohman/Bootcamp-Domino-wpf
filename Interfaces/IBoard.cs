@@ -18,15 +18,6 @@ namespace DominoGame.Interfaces
         /// Value at the right end of the board.
         /// </summary>
         int RightEnd { get; }
-
-        /// <summary>
-        /// Place a tile on the board, on left or right.
-        /// </summary>
-        bool PlaceTile(IDominoTile tile, bool placeLeft);
-
-        /// <summary>
-        /// Clear all tiles from the board.
-        /// </summary>
         void Clear();
     }
 }

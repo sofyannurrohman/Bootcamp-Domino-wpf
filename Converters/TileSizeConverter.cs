@@ -6,21 +6,30 @@ namespace DominoGame.Converters
 {
     public class TileSizeConverter : IValueConverter
     {
+        // Base size for horizontal orientation
         public double NormalWidth { get; set; } = 60;
         public double NormalHeight { get; set; } = 120;
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (!(value is double rotation)) return NormalWidth;
+            if (!(value is double rotation))
+                return NormalWidth;
 
-            string param = parameter as string;
+            string param = parameter as string ?? "Width";
+
+            // For 0 or 180 degrees, use normal orientation
             if (rotation % 180 == 0)
             {
-                return param == "Width" ? NormalWidth : NormalHeight;
+                return param.Equals("Width", StringComparison.OrdinalIgnoreCase)
+                    ? NormalWidth
+                    : NormalHeight;
             }
             else
             {
-                return param == "Width" ? NormalHeight : NormalWidth;
+                // Swap width/height for vertical orientation (90 or 270 degrees)
+                return param.Equals("Width", StringComparison.OrdinalIgnoreCase)
+                    ? NormalHeight
+                    : NormalWidth;
             }
         }
 

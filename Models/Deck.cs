@@ -8,7 +8,7 @@ namespace DominoGame.Models
 {
     public class Deck : IDeck
     {
-        public List<IDominoTile> DominoTiles { get; private set; } = new();
+        public List<IDominoTile> DominoTiles { get; set; } = new();
 
         private readonly Random _random = new(Guid.NewGuid().GetHashCode());
 

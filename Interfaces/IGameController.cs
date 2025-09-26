@@ -20,59 +20,92 @@ namespace DominoGame.Interfaces
 
         #region Game Setup
 
-        // Start a new game with optional maxRounds
+        /// <summary>
+        /// Initialize a new game with optional maximum rounds
+        /// </summary>
         void StartGame(int maxRounds = 5);
 
-        // Start a new round
+        /// <summary>
+        /// Start a new round without restarting the whole game
+        /// </summary>
         void StartNextRound();
 
         #endregion
 
         #region Game Actions
 
-        // Attempt to play a tile (returns true if successful)
+        /// <summary>
+        /// Play a tile for a player; returns true if successful
+        /// </summary>
         bool PlayTile(IPlayer player, IDominoTile tile, bool placeLeft);
 
-        // Move to the next player's turn (skip if no playable tile)
+        /// <summary>
+        /// Move to the next player's turn, skipping if they cannot play
+        /// </summary>
         void NextTurn();
 
-        // Check if a player has at least one playable tile
+        /// <summary>
+        /// Check if a player has at least one playable tile
+        /// </summary>
         bool HasPlayableTile(IPlayer player);
 
-        // Get the next playable tile for a player (null if none)
+        /// <summary>
+        /// Get the next playable tile for a player, null if none
+        /// </summary>
         (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player);
 
         #endregion
 
         #region Round & Game State
 
-        // Check if the current round is over
+        /// <summary>
+        /// Check if the current round is over
+        /// </summary>
         bool IsRoundOver();
 
-        // Get the winner of the current round (null if draw)
+        /// <summary>
+        /// Get the winner of the current round, or null if draw
+        /// </summary>
         IPlayer? GetRoundWinner();
 
-        // End the round and update scores
+        /// <summary>
+        /// End the current round and update scores
+        /// </summary>
         void EndRound();
 
-        // Check if the game is over (any player score >= 100)
+        /// <summary>
+        /// Check if the game is over
+        /// </summary>
         bool IsGameOver();
 
-        // Get the overall game winner (first player with highest score)
+        /// <summary>
+        /// Get the overall game winner
+        /// </summary>
         IPlayer? GetWinner();
 
         #endregion
 
         #region Events
 
-        // Fired when a tile is successfully played
+        /// <summary>
+        /// Fired when a tile is successfully played
+        /// </summary>
         event Action<IPlayer, IDominoTile, bool>? OnTilePlayed;
 
-        // Fired when a round ends
+        /// <summary>
+        /// Fired when a round ends
+        /// </summary>
         event Action<IPlayer?>? OnRoundOver;
 
-        // Fired when the game ends
+        /// <summary>
+        /// Fired when the game ends
+        /// </summary>
         event Action<IPlayer>? OnGameOver;
+
+        /// <summary>
+        /// Fired when a player is skipped because they cannot play
+        /// </summary>
+        event Action<IPlayer>? OnPlayerSkipped;
 
         #endregion
     }

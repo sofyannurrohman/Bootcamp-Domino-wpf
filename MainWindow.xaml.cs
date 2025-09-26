@@ -1,6 +1,7 @@
 ﻿using DominoGame.Controllers;
 using DominoGame.Interfaces;
 using DominoGame.Models;
+using DominoGame.Services;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -24,19 +25,30 @@ namespace DominoGameWPF
 
         private void InitializeGame()
         {
-            Game = new DominoGameController();
+            var boardService = new BoardService();
+            var playerService = new PlayerService();
+            var turnService = new TurnService();
+
+            var board = new Board();
+
+            // DI Services
+            Game = new DominoGameController(boardService, playerService, turnService, board);
+
+            // Subscribe to events
             Game.OnTilePlayed += OnTilePlayed;
             Game.OnRoundOver += OnRoundOver;
             Game.OnGameOver += OnGameOver;
             Game.OnPlayerSkipped += OnPlayerSkipped;
 
+            // DataContext for WPF binding
             DataContext = Game;
 
+            // Start the game
             Game.StartGame(maxRounds: 5);
 
+            // Start the game loop
             _ = GameLoopAsync();
         }
-
         #endregion
 
         #region Event Handlers
