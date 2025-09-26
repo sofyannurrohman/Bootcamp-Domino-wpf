@@ -36,7 +36,7 @@ namespace DominoGame.Controllers
             }
         }
 
-        private int _maxRounds = 6;
+        private int _maxRounds = 5;
         public int MaxRounds
         {
             get => _maxRounds;
@@ -83,6 +83,7 @@ namespace DominoGame.Controllers
 
         private void StartNewRound()
         {
+            // Jangan otomatis stop, bahkan jika CurrentRound = MaxRounds
             CurrentRound++;
             Board.Clear();
             currentPlayerIndex = _random.Next(Players.Count);
@@ -106,7 +107,11 @@ namespace DominoGame.Controllers
             }
         }
 
-        public void StartNextRound() => StartNewRound();
+        public void StartNextRound()
+        {
+            if (!IsGameOver())
+                StartNewRound();
+        }
         #endregion
 
         #region Tile Management
@@ -143,16 +148,12 @@ namespace DominoGame.Controllers
                 if (currentPlayerIndex == startIndex)
                 {
                     looped = true;
-                    break; // semua player sudah dicoba, ronde mungkin selesai
+                    break; // semua player sudah dicoba
                 }
 
             } while (true);
 
-            // Jika semua player tidak bisa main, jangan biarkan CurrentPlayer invalid
-            if (looped && !HasPlayableTile(CurrentPlayer))
-            {
-                // tetap biarkan CurrentPlayer, main loop di UI akan cek IsRoundOver()
-            }
+            // Jika semua player tidak bisa main, biarkan CurrentPlayer tetap
         }
 
         public void SkipCurrentPlayer() => NextTurn();
@@ -211,8 +212,8 @@ namespace DominoGame.Controllers
 
             OnRoundOver?.Invoke(winner);
 
-            // Game over cek: skor atau max round
-            if (Players.Any(p => p.Score >= 30) || CurrentRound >= MaxRounds)
+            // Game over dicek hanya setelah ronde dimainkan
+            if (Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds)
             {
                 var gameWinner = GetWinner();
                 if (gameWinner != null)
@@ -220,9 +221,10 @@ namespace DominoGame.Controllers
             }
         }
 
-        public bool IsGameOver() => Players.Any(p => p.Score >= 30) || CurrentRound >= MaxRounds;
+        public bool IsGameOver() => Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds;
 
         public IPlayer? GetWinner() => Players.OrderByDescending(p => p.Score).FirstOrDefault();
+
         public void ResetScores()
         {
             foreach (var player in Players)
