@@ -7,21 +7,23 @@ using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
+    /// <summary>
+    /// Determines whether a DominoTile is playable for the current player on the current board.
+    /// MultiBinding values expected: [DominoTile, Player, Board]
+    /// </summary>
     public class TilePlayableConverter : IMultiValueConverter
     {
-        /// <summary>
-        /// Determines whether a DominoTile is playable for the current player on the current board.
-        /// Values expected: [DominoTile, Player, Board]
-        /// </summary>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values?.Length != 3) return false;
+            if (values?.Length != 3)
+                return false;
 
             if (values[0] is not DominoTile tile) return false;
             if (values[1] is not Player player) return false;
             if (values[2] is not IBoard board) return false;
 
-            return board.Tiles.Count == 0
+            // First move: opening rule
+            return !board.Tiles.Any()
                 ? CanPlayOpeningTile(tile, player)
                 : CanPlayRegularTile(tile, board);
         }
@@ -33,7 +35,7 @@ namespace DominoGame.Converters
         /// </summary>
         private static bool CanPlayOpeningTile(DominoTile tile, Player player)
         {
-            if (player.Hand == null || player.Hand.Count == 0)
+            if (player.Hand == null || !player.Hand.Any())
                 return false;
 
             var doubles = player.Hand.Where(t => t.IsDouble).ToList();
@@ -52,7 +54,7 @@ namespace DominoGame.Converters
         /// </summary>
         private static bool CanPlayRegularTile(DominoTile tile, IBoard board)
         {
-            if (board.Tiles == null || board.Tiles.Count == 0)
+            if (board.Tiles == null || !board.Tiles.Any())
                 return false;
 
             return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd);

@@ -19,22 +19,29 @@ namespace DominoGame.Interfaces
         int CurrentRound { get; }
         int MaxRounds { get; }
 
+        #region Game Setup
+
+        // Start a new game with optional maxRounds
+        void StartGame(int maxRounds = 5);
+
+        // Start a new round
+        void StartNextRound();
+
+        #endregion
+
         #region Game Actions
 
         // Attempt to play a tile (returns true if successful)
         bool PlayTile(Player player, DominoTile tile, bool placeLeft);
 
-        // Move to the next player's turn
+        // Move to the next player's turn (skip if no playable tile)
         void NextTurn();
-
-        // Draw a tile from the boneyard for a player
-        DominoTile? DrawTile(Player player);
 
         // Check if a player has at least one playable tile
         bool HasPlayableTile(Player player);
 
-        // Auto-play or draw until a player can play (returns true if player can play)
-        DominoTile? TryPlayOrDraw(Player player);
+        // Get the next playable tile for a player (null if none)
+        (DominoTile tile, bool placeLeft)? GetNextPlayableTile(Player player);
 
         #endregion
 
@@ -43,14 +50,17 @@ namespace DominoGame.Interfaces
         // Check if the current round is over
         bool IsRoundOver();
 
-        // Get the winner of the current round
-        Player GetRoundWinner();
+        // Get the winner of the current round (null if draw)
+        Player? GetRoundWinner();
 
-        // Check if the game is over
+        // End the round and update scores
+        void EndRound();
+
+        // Check if the game is over (any player score >= 100)
         bool IsGameOver();
 
-        // Get the overall game winner
-        Player GetWinner();
+        // Get the overall game winner (first player with highest score)
+        Player? GetWinner();
 
         #endregion
 
@@ -60,7 +70,7 @@ namespace DominoGame.Interfaces
         event Action<Player, DominoTile, bool>? OnTilePlayed;
 
         // Fired when a round ends
-        event Action<Player>? OnRoundOver;
+        event Action<Player?>? OnRoundOver;
 
         // Fired when the game ends
         event Action<Player>? OnGameOver;

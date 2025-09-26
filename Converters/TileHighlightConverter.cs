@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media;
 using DominoGame.Models;
@@ -8,6 +7,10 @@ using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
+    /// <summary>
+    /// Returns a highlight brush if the tile is playable; otherwise normal brush.
+    /// Expects MultiBinding: [DominoTile, Player, Board]
+    /// </summary>
     public class TileHighlightConverter : IMultiValueConverter
     {
         // Frozen brushes for performance
@@ -21,23 +24,20 @@ namespace DominoGame.Converters
             return brush;
         }
 
-        /// <summary>
-        /// Returns the highlight brush if the tile is playable; otherwise normal brush.
-        /// Expects: [DominoTile, Player, Board]
-        /// </summary>
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values?.Length != 3) return NormalBrush;
+            if (values?.Length != 3)
+                return NormalBrush;
 
             if (values[0] is not DominoTile tile) return NormalBrush;
-            if (values[1] is not Player) return NormalBrush; // currently unused, kept for signature
+            if (values[1] is not Player) return NormalBrush; // unused, signature requirement
             if (values[2] is not IBoard board) return NormalBrush;
 
-            var boardTiles = board.Tiles;
-            if (boardTiles == null || boardTiles.Count == 0)
-                return HighlightBrush; // First move: highlight all tiles
+            // First move: all tiles highlighted
+            if (!board.Tiles.Any())
+                return HighlightBrush;
 
-            // Highlight if tile matches either end of the board
+            // Highlight only playable tiles (matches left or right end)
             return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)
                 ? HighlightBrush
                 : NormalBrush;

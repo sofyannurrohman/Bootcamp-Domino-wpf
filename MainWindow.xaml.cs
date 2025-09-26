@@ -25,9 +25,9 @@ namespace DominoGameWPF
         private void InitializeGame()
         {
             Game = new DominoGameController();
-            Game.OnTilePlayed += Game_OnTilePlayed;
-            Game.OnRoundOver += Game_OnRoundOver;
-            Game.OnGameOver += Game_OnGameOver;
+            Game.OnTilePlayed += OnTilePlayed;
+            Game.OnRoundOver += OnRoundOver;
+            Game.OnGameOver += OnGameOver;
 
             DataContext = Game;
             Game.StartGame(maxRounds: 5);
@@ -35,26 +35,32 @@ namespace DominoGameWPF
             _ = GameLoopAsync();
         }
 
-        private void Game_OnTilePlayed(IPlayer player, DominoTile tile, bool placedLeft)
+        private void OnTilePlayed(Player player, DominoTile tile, bool placedLeft)
         {
             StatusText.Text = $"{player.Name} played [{tile.Left}|{tile.Right}] on {(placedLeft ? "left" : "right")}.";
             RefreshUI();
         }
 
-        private void Game_OnRoundOver(IPlayer winner)
+        private void OnRoundOver(Player? winner)
         {
             RefreshUI();
-            MessageBox.Show($"Round {Game.CurrentRound} over!\nWinner: {winner.Name}\nScores:\n{GetScoresString()}",
-                            "Round Over", MessageBoxButton.OK, MessageBoxImage.Information);
+            string msg = winner != null
+                ? $"Winner: {winner.Name}"
+                : "Draw! No winner this round.";
+
+            MessageBox.Show(
+                $"Round {Game.CurrentRound} over!\n{msg}\nScores:\n{GetScoresString()}",
+                "Round Over", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void Game_OnGameOver(IPlayer winner)
+        private void OnGameOver(Player winner)
         {
             RefreshUI();
-            MessageBox.Show($"Game Over!\nWinner: {winner.Name}\nFinal Scores:\n{GetScoresString()}",
-                            "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                $"Game Over!\nWinner: {winner.Name}\nFinal Scores:\n{GetScoresString()}",
+                "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            InitializeGame(); // Restart automatically
+            InitializeGame(); // Automatically restart
         }
 
         private string GetScoresString() =>
@@ -71,26 +77,23 @@ namespace DominoGameWPF
             PlayerHand.ItemsSource = null;
             PlayerHand.ItemsSource = Game.CurrentPlayer.Hand;
 
-            // Dynamically enable only playable tiles for human
             foreach (var item in PlayerHand.Items)
             {
-                if (PlayerHand.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem lbi)
+                if (PlayerHand.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem lbi &&
+                    lbi.Content is DominoTile tile)
                 {
-                    if (lbi.Content is DominoTile tile)
+                    var btn = FindVisualChild<Button>(lbi);
+                    if (btn != null)
                     {
-                        var btn = FindVisualChild<Button>(lbi);
-                        if (btn != null)
-                            btn.IsEnabled = IsHumanTurn() && (BoardIsEmpty() || tile.Matches(Game.Board.LeftEnd) || tile.Matches(Game.Board.RightEnd));
+                        btn.IsEnabled = IsHumanTurn() &&
+                                        (Game.Board.Any() ? tile.Matches(Game.Board.LeftEnd) || tile.Matches(Game.Board.RightEnd) : true);
                     }
                 }
             }
         }
 
-        private bool BoardIsEmpty() => !Game.Board.Any();
-
         private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
         {
-            if (parent == null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
@@ -110,7 +113,9 @@ namespace DominoGameWPF
             if (!IsHumanTurn()) return;
             if (sender is not Button { DataContext: DominoTile tile }) return;
 
-            bool played = Game.PlayTile(Game.CurrentPlayer, tile, true) || Game.PlayTile(Game.CurrentPlayer, tile, false);
+            // Try placing left first, then right
+            bool played = Game.PlayTile(Game.CurrentPlayer, tile, true) ||
+                          Game.PlayTile(Game.CurrentPlayer, tile, false);
 
             if (!played)
             {
@@ -118,7 +123,7 @@ namespace DominoGameWPF
                 return;
             }
 
-            _humanTurnTcs?.TrySetResult(true); // Signal human turn done
+            _humanTurnTcs?.TrySetResult(true);
         }
 
         #endregion
@@ -130,20 +135,10 @@ namespace DominoGameWPF
             while (!Game.IsGameOver())
             {
                 RefreshUI();
-
                 var player = Game.CurrentPlayer;
                 if (player == null) { await Task.Delay(300); continue; }
 
-                // Auto-draw until player can play or boneyard empty
-                while (!HasPlayableTile(player) && Game.DrawTile(player) != null)
-                {
-                    StatusText.Text = $"{player.Name} draws a tile...";
-                    RefreshUI();
-                    await Task.Delay(400);
-                }
-
-                // Skip if still cannot play
-                if (!HasPlayableTile(player))
+                if (!Game.HasPlayableTile(player))
                 {
                     StatusText.Text = $"{player.Name} cannot play, skipping turn...";
                     await Task.Delay(800);
@@ -173,14 +168,23 @@ namespace DominoGameWPF
         private async Task ComputerTurnAsync()
         {
             await Task.Delay(500);
-            var tile = Game.GetPlayableTile(Game.CurrentPlayer);
-            if (tile != null)
+            var player = Game.CurrentPlayer;
+
+            // Ambil next playable tile (nullable tuple)
+            var nextTileInfo = Game.GetNextPlayableTile(player);
+
+            if (nextTileInfo is (DominoTile tile, bool placeLeft))
             {
-                bool played = Game.PlayTile(Game.CurrentPlayer, tile, true) || Game.PlayTile(Game.CurrentPlayer, tile, false);
+                bool played = Game.PlayTile(player, tile, placeLeft);
                 StatusText.Text = played
                     ? $"Computer played [{tile.Left}|{tile.Right}]"
-                    : $"Computer cannot play [{tile.Left}|{tile.Right}], skipping...";
+                    : $"{player.Name} cannot play, skipping turn...";
             }
+            else
+            {
+                StatusText.Text = $"{player.Name} cannot play, skipping turn...";
+            }
+
             await Task.Delay(500);
         }
 
@@ -188,16 +192,9 @@ namespace DominoGameWPF
         {
             if (!Game.IsRoundOver()) return;
 
-            var roundWinner = Game.GetRoundWinner();
-            roundWinner.Score++;
-            Game_OnRoundOver(roundWinner);
+            Game.EndRound(); // controller akan update skor dan panggil OnRoundOver
 
-            if (Game.CurrentRound >= Game.MaxRounds)
-            {
-                var gameWinner = Game.GetWinner();
-                Game_OnGameOver(gameWinner);
-            }
-            else
+            if (!Game.IsGameOver())
             {
                 Game.StartNextRound();
                 await Task.Delay(300);
@@ -207,16 +204,6 @@ namespace DominoGameWPF
         #endregion
 
         #region Helpers
-
-        private bool HasPlayableTile(IPlayer player)
-        {
-            if (!player.Hand.Any()) return false;
-            if (BoardIsEmpty()) return true;
-
-            int leftEnd = Game.Board.LeftEnd;
-            int rightEnd = Game.Board.RightEnd;
-            return player.Hand.Any(t => t.Matches(leftEnd) || t.Matches(rightEnd));
-        }
 
         private bool IsComputerTurn() => Game.CurrentPlayer?.Name == "Computer";
         private bool IsHumanTurn() => !IsComputerTurn();
