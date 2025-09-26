@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 namespace DominoGame.Interfaces
 {
-    internal interface IDeck
+    public interface IDeck
     {
+        List<IDominoTile> DominoTiles { get; }
+        void Shuffle();
+
+        // ambil sejumlah tile dari deck
+        List<IDominoTile> DrawTiles(int count);
     }
 }
