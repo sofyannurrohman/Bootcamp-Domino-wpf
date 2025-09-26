@@ -16,5 +16,6 @@ namespace DominoGame.Interfaces
 
         bool Matches(int value);
         void Flip();
+        bool IsDouble { get; }
     }
 }

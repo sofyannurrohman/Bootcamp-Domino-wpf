@@ -1,5 +1,4 @@
-﻿using DominoGame.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace DominoGame.Interfaces
@@ -10,10 +9,10 @@ namespace DominoGame.Interfaces
         IBoard Board { get; }
 
         // Players participating
-        List<Player> Players { get; }
+        List<IPlayer> Players { get; }
 
         // Current player in turn
-        Player CurrentPlayer { get; }
+        IPlayer CurrentPlayer { get; }
 
         // Current round tracking
         int CurrentRound { get; }
@@ -32,16 +31,16 @@ namespace DominoGame.Interfaces
         #region Game Actions
 
         // Attempt to play a tile (returns true if successful)
-        bool PlayTile(Player player, DominoTile tile, bool placeLeft);
+        bool PlayTile(IPlayer player, IDominoTile tile, bool placeLeft);
 
         // Move to the next player's turn (skip if no playable tile)
         void NextTurn();
 
         // Check if a player has at least one playable tile
-        bool HasPlayableTile(Player player);
+        bool HasPlayableTile(IPlayer player);
 
         // Get the next playable tile for a player (null if none)
-        (DominoTile tile, bool placeLeft)? GetNextPlayableTile(Player player);
+        (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player);
 
         #endregion
 
@@ -51,7 +50,7 @@ namespace DominoGame.Interfaces
         bool IsRoundOver();
 
         // Get the winner of the current round (null if draw)
-        Player? GetRoundWinner();
+        IPlayer? GetRoundWinner();
 
         // End the round and update scores
         void EndRound();
@@ -60,20 +59,20 @@ namespace DominoGame.Interfaces
         bool IsGameOver();
 
         // Get the overall game winner (first player with highest score)
-        Player? GetWinner();
+        IPlayer? GetWinner();
 
         #endregion
 
         #region Events
 
         // Fired when a tile is successfully played
-        event Action<Player, DominoTile, bool>? OnTilePlayed;
+        event Action<IPlayer, IDominoTile, bool>? OnTilePlayed;
 
         // Fired when a round ends
-        event Action<Player?>? OnRoundOver;
+        event Action<IPlayer?>? OnRoundOver;
 
         // Fired when the game ends
-        event Action<Player>? OnGameOver;
+        event Action<IPlayer>? OnGameOver;
 
         #endregion
     }

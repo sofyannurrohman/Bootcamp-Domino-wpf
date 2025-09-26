@@ -10,16 +10,18 @@ namespace DominoGame.Controllers
     public class DominoGameController : IGameController, INotifyPropertyChanged
     {
         public IBoard Board { get; private set; } = new Board();
-        public List<Player> Players { get; } = new();
+        public List<IPlayer> Players { get; } = new();
 
-        private int currentPlayerIndex = 0;
-        public Player CurrentPlayer => Players.Count > 0 ? Players[currentPlayerIndex] : null!;
+        private int currentPlayerIndex;
+        private readonly Random _random = new(Guid.NewGuid().GetHashCode());
+
+        public IPlayer CurrentPlayer => Players.Count > 0 ? Players[currentPlayerIndex] : null!;
 
         public event PropertyChangedEventHandler? PropertyChanged;
-        protected void OnPropertyChanged(string name) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        private void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private int _currentRound = 0;
+        private int _currentRound;
         public int CurrentRound
         {
             get => _currentRound;
@@ -47,12 +49,13 @@ namespace DominoGame.Controllers
             }
         }
 
-        public event Action<Player, DominoTile, bool>? OnTilePlayed;
-        public event Action<Player>? OnRoundOver;
-        public event Action<Player>? OnGameOver;
+        // events
+        public event Action<IPlayer, IDominoTile, bool>? OnTilePlayed;
+        public event Action<IPlayer?>? OnRoundOver;
+        public event Action<IPlayer>? OnGameOver;
+        public event Action<IPlayer>? OnPlayerSkipped;
 
         #region Game Setup
-
         public void StartGame(int maxRounds = 5)
         {
             Players.Clear();
@@ -73,7 +76,7 @@ namespace DominoGame.Controllers
 
         private void Player_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(Player.Score))
+            if (e.PropertyName == nameof(IPlayer.Score))
                 OnPropertyChanged(nameof(Players));
         }
 
@@ -82,8 +85,7 @@ namespace DominoGame.Controllers
             CurrentRound++;
             Board.Clear();
 
-            // Tentukan giliran pertama secara acak
-            currentPlayerIndex = new Random().Next(Players.Count);
+            currentPlayerIndex = _random.Next(Players.Count);
 
             foreach (var player in Players)
                 player.Hand.Clear();
@@ -93,99 +95,126 @@ namespace DominoGame.Controllers
         }
 
         public void StartNextRound() => StartNewRound();
-
         #endregion
 
         #region Tile Management
-
-        private static List<DominoTile> GenerateTiles()
+        private static List<IDominoTile> GenerateTiles()
         {
-            var tiles = new List<DominoTile>();
+            var tiles = new List<IDominoTile>();
             for (int i = 0; i <= 6; i++)
                 for (int j = i; j <= 6; j++)
                     tiles.Add(new DominoTile(i, j));
             return tiles;
         }
 
-        private static List<DominoTile> ShuffleTiles(List<DominoTile> tiles)
-        {
-            var rnd = new Random(Guid.NewGuid().GetHashCode());
-            return tiles.OrderBy(_ => rnd.Next()).ToList();
-        }
+        private List<IDominoTile> ShuffleTiles(IEnumerable<IDominoTile> tiles) =>
+            tiles.OrderBy(_ => _random.Next()).ToList();
 
-        private static void DealTiles(List<DominoTile> tiles, List<Player> players)
+        private static void DealTiles(List<IDominoTile> tiles, List<IPlayer> players)
         {
             const int handSize = 7;
             for (int i = 0; i < players.Count; i++)
-                players[i].Hand.AddRange(tiles.Skip(i * handSize).Take(handSize));
+            {
+                var handTiles = tiles.Skip(i * handSize).Take(handSize);
+                players[i].Hand.AddRange(handTiles);
+            }
         }
 
-        public bool PlayTile(Player player, DominoTile tile, bool placeLeft)
+        public bool PlayTile(IPlayer player, IDominoTile tile, bool placeLeft)
         {
             if (player != CurrentPlayer) return false;
             if (!Board.PlaceTile(tile, placeLeft)) return false;
 
             player.Hand.Remove(tile);
             OnTilePlayed?.Invoke(player, tile, placeLeft);
+
+            // tidak lagi memanggil EndRound di sini
+            NextTurn();
             return true;
         }
+        #endregion
 
-        public (DominoTile tile, bool placeLeft)? GetNextPlayableTile(Player player)
+        #region Turn Handling
+        public void NextTurn()
         {
+            if (Players.Count == 0) return;
+
+            int startIndex = currentPlayerIndex;
+            bool skipped = false;
+
+            do
+            {
+                currentPlayerIndex = (currentPlayerIndex + 1) % Players.Count;
+
+                if (!HasPlayableTile(CurrentPlayer) && !skipped)
+                {
+                    skipped = true;
+                    OnPlayerSkipped?.Invoke(CurrentPlayer);
+                    // break supaya UI bisa baca event sebelum lanjut
+                    return;
+                }
+
+                if (HasPlayableTile(CurrentPlayer))
+                {
+                    skipped = false;
+                    break; // ada playable tile, turn valid
+                }
+
+                // jika kembali ke startIndex, berarti semua player buntu
+                if (currentPlayerIndex == startIndex)
+                {
+                    skipped = false;
+                    break;
+                }
+
+            } while (true);
+        }
+
+
+        // wrapper supaya kompatibel dengan MainWindow lama
+        public void SkipCurrentPlayer() => NextTurn();
+        #endregion
+
+        #region Helpers (Playable Tile)
+        public (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player)
+        {
+            if (player == null || !player.Hand.Any()) return null;
+
             if (!Board.Any())
             {
                 var firstTile = player.Hand.FirstOrDefault();
                 return firstTile != null ? (firstTile, true) : null;
             }
 
-            int leftEnd = Board.LeftEnd;
-            int rightEnd = Board.RightEnd;
+            int? left = Board.LeftEnd;
+            int? right = Board.RightEnd;
 
             foreach (var tile in player.Hand)
             {
-                if (tile.Matches(leftEnd)) return (tile, true);
-                if (tile.Matches(rightEnd)) return (tile, false);
+                if (left != null && (tile.Left == left || tile.Right == left))
+                    return (tile, true);
+                if (right != null && (tile.Left == right || tile.Right == right))
+                    return (tile, false);
             }
-
             return null;
         }
 
-        public bool HasPlayableTile(Player player) => GetNextPlayableTile(player) != null;
-
+        public bool HasPlayableTile(IPlayer player) =>
+            GetNextPlayableTile(player) != null;
         #endregion
 
         #region Game Flow
+        public bool IsRoundOver() =>
+            Players.Any(p => !p.Hand.Any()) || Players.All(p => !HasPlayableTile(p));
 
-        public void NextTurn()
+        public IPlayer? GetRoundWinner()
         {
-            int attempts = 0;
-            do
-            {
-                currentPlayerIndex = (currentPlayerIndex + 1) % Players.Count;
-                attempts++;
-                if (attempts > Players.Count) break; // semua player di-blok
-            } while (!HasPlayableTile(CurrentPlayer));
-        }
-
-        public bool IsRoundOver()
-        {
-            // Ronde berakhir jika ada player habis tile atau semua player di-blok
-            if (Players.Any(p => !p.Hand.Any())) return true;
-            return Players.All(p => !HasPlayableTile(p));
-        }
-
-        public Player? GetRoundWinner()
-        {
-            // Cek siapa habis tile → otomatis menang
             var playerEmpty = Players.FirstOrDefault(p => !p.Hand.Any());
             if (playerEmpty != null) return playerEmpty;
 
-            // Semua di-blok → cari jumlah pips terkecil
             var minSum = Players.Min(p => p.Hand.Sum(t => t.Left + t.Right));
             var winners = Players.Where(p => p.Hand.Sum(t => t.Left + t.Right) == minSum).ToList();
-
-            if (winners.Count == 1) return winners[0]; // pemenang tunggal
-            return null; // draw
+            return winners.Count == 1 ? winners[0] : null;
         }
 
         public void EndRound()
@@ -193,29 +222,23 @@ namespace DominoGame.Controllers
             var winner = GetRoundWinner();
             if (winner != null)
             {
-                int score = 0;
-                foreach (var player in Players)
-                {
-                    if (player != winner)
-                        score += player.Hand.Sum(t => t.Left + t.Right);
-                }
+                int score = Players
+                    .Where(p => p != winner)
+                    .Sum(p => p.Hand.Sum(t => t.Left + t.Right));
 
-                score -= winner.Hand.Sum(t => t.Left + t.Right); // sesuai aturan
-                winner.Score += Math.Max(score, 0); // skor tidak boleh negatif
+                score -= winner.Hand.Sum(t => t.Left + t.Right);
+                winner.Score += Math.Max(score, 0);
             }
 
-            OnRoundOver?.Invoke(winner!);
+            OnRoundOver?.Invoke(winner);
 
-            // Cek game over
             var gameWinner = Players.FirstOrDefault(p => p.Score >= 100);
             if (gameWinner != null)
                 OnGameOver?.Invoke(gameWinner);
         }
 
-        public bool IsGameOver() => Players.Any(p => p.Score >= 100);
-
-        public Player? GetWinner() => Players.OrderByDescending(p => p.Score).FirstOrDefault();
-
+        public bool IsGameOver() => Players.Any(p => p.Score >= 30);
+        public IPlayer? GetWinner() => Players.OrderByDescending(p => p.Score).FirstOrDefault();
         #endregion
     }
 }

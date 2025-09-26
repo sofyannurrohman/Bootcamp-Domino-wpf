@@ -1,12 +1,13 @@
 ﻿using DominoGame.Models;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace DominoGame.Interfaces
 {
-    public interface IPlayer
+    public interface IPlayer : INotifyPropertyChanged
     {
         string Name { get; }
-        List<DominoTile> Hand { get; }
+        List<IDominoTile> Hand { get; }
         int Score { get; set; }
         bool HasPlayableTile(int leftEnd, int rightEnd);
     }

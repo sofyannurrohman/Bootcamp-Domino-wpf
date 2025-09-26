@@ -1,6 +1,5 @@
 ﻿using DominoGame.Controllers;
 using DominoGame.Interfaces;
-using DominoGame.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +27,7 @@ namespace DominoGameWPF
             Game.OnTilePlayed += OnTilePlayed;
             Game.OnRoundOver += OnRoundOver;
             Game.OnGameOver += OnGameOver;
+            Game.OnPlayerSkipped += OnPlayerSkipped;
 
             DataContext = Game;
             Game.StartGame(maxRounds: 5);
@@ -35,36 +35,40 @@ namespace DominoGameWPF
             _ = GameLoopAsync();
         }
 
-        private void OnTilePlayed(Player player, DominoTile tile, bool placedLeft)
+        #endregion
+
+        #region Event Handlers
+
+        private void OnTilePlayed(IPlayer player, IDominoTile tile, bool placedLeft)
         {
             StatusText.Text = $"{player.Name} played [{tile.Left}|{tile.Right}] on {(placedLeft ? "left" : "right")}.";
             RefreshUI();
         }
 
-        private void OnRoundOver(Player? winner)
+        private void OnPlayerSkipped(IPlayer player)
+        {
+            StatusText.Text = $"{player.Name} cannot play, skipping turn...";
+        }
+
+        private void OnRoundOver(IPlayer? winner)
         {
             RefreshUI();
-            string msg = winner != null
-                ? $"Winner: {winner.Name}"
-                : "Draw! No winner this round.";
 
+            string msg = winner != null ? $"Winner: {winner.Name}" : "Draw! No winner this round.";
             MessageBox.Show(
                 $"Round {Game.CurrentRound} over!\n{msg}\nScores:\n{GetScoresString()}",
                 "Round Over", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void OnGameOver(Player winner)
+        private void OnGameOver(IPlayer winner)
         {
             RefreshUI();
             MessageBox.Show(
                 $"Game Over!\nWinner: {winner.Name}\nFinal Scores:\n{GetScoresString()}",
                 "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            InitializeGame(); // Automatically restart
+            InitializeGame();
         }
-
-        private string GetScoresString() =>
-            string.Join("\n", Game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
         #endregion
 
@@ -80,14 +84,13 @@ namespace DominoGameWPF
             foreach (var item in PlayerHand.Items)
             {
                 if (PlayerHand.ItemContainerGenerator.ContainerFromItem(item) is ListBoxItem lbi &&
-                    lbi.Content is DominoTile tile)
+                    lbi.Content is IDominoTile tile &&
+                    FindVisualChild<Button>(lbi) is Button btn)
                 {
-                    var btn = FindVisualChild<Button>(lbi);
-                    if (btn != null)
-                    {
-                        btn.IsEnabled = IsHumanTurn() &&
-                                        (Game.Board.Any() ? tile.Matches(Game.Board.LeftEnd) || tile.Matches(Game.Board.RightEnd) : true);
-                    }
+                    btn.IsEnabled = IsHumanTurn() &&
+                                    (!Game.Board.Any() ||
+                                     tile.Matches(Game.Board.LeftEnd) ||
+                                     tile.Matches(Game.Board.RightEnd));
                 }
             }
         }
@@ -98,8 +101,7 @@ namespace DominoGameWPF
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
                 if (child is T t) return t;
-                var result = FindVisualChild<T>(child);
-                if (result != null) return result;
+                if (FindVisualChild<T>(child) is T result) return result;
             }
             return null;
         }
@@ -111,9 +113,8 @@ namespace DominoGameWPF
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
             if (!IsHumanTurn()) return;
-            if (sender is not Button { DataContext: DominoTile tile }) return;
+            if (sender is not Button { DataContext: IDominoTile tile }) return;
 
-            // Try placing left first, then right
             bool played = Game.PlayTile(Game.CurrentPlayer, tile, true) ||
                           Game.PlayTile(Game.CurrentPlayer, tile, false);
 
@@ -135,75 +136,74 @@ namespace DominoGameWPF
             while (!Game.IsGameOver())
             {
                 RefreshUI();
+
                 var player = Game.CurrentPlayer;
                 if (player == null) { await Task.Delay(300); continue; }
 
                 if (!Game.HasPlayableTile(player))
                 {
-                    StatusText.Text = $"{player.Name} cannot play, skipping turn...";
-                    await Task.Delay(800);
+                    // skip player & tunggu sedikit supaya terlihat
+                    OnPlayerSkipped(player);
                     Game.NextTurn();
-                    await HandleRoundEndIfNeeded();
+                    await Task.Delay(800);
                     continue;
                 }
 
                 if (IsComputerTurn())
-                {
                     await ComputerTurnAsync();
-                    Game.NextTurn();
-                    await HandleRoundEndIfNeeded();
-                    continue;
-                }
+                else
+                    await HumanTurnAsync();
 
-                // Human turn
-                _humanTurnTcs = new TaskCompletionSource<bool>();
-                StatusText.Text = $"{player.Name}'s turn";
-                RefreshUI();
-                await _humanTurnTcs.Task;
-                Game.NextTurn();
                 await HandleRoundEndIfNeeded();
             }
         }
 
         private async Task ComputerTurnAsync()
         {
-            await Task.Delay(500);
             var player = Game.CurrentPlayer;
-
-            // Ambil next playable tile (nullable tuple)
             var nextTileInfo = Game.GetNextPlayableTile(player);
 
-            if (nextTileInfo is (DominoTile tile, bool placeLeft))
+            if (nextTileInfo is (IDominoTile tile, bool placeLeft))
             {
-                bool played = Game.PlayTile(player, tile, placeLeft);
-                StatusText.Text = played
-                    ? $"Computer played [{tile.Left}|{tile.Right}]"
-                    : $"{player.Name} cannot play, skipping turn...";
+                Game.PlayTile(player, tile, placeLeft);
+                await Task.Delay(500); // delay supaya UI update
             }
             else
             {
-                StatusText.Text = $"{player.Name} cannot play, skipping turn...";
+                // jika komputer tidak bisa main, skip dan update UI
+                OnPlayerSkipped(player);
+                Game.NextTurn();
+                await Task.Delay(800);
             }
+        }
 
-            await Task.Delay(500);
+        private async Task HumanTurnAsync()
+        {
+            _humanTurnTcs = new TaskCompletionSource<bool>();
+            StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
+            RefreshUI();
+            await _humanTurnTcs.Task;
         }
 
         private async Task HandleRoundEndIfNeeded()
         {
             if (!Game.IsRoundOver()) return;
 
-            Game.EndRound(); // controller akan update skor dan panggil OnRoundOver
+            Game.EndRound();
 
             if (!Game.IsGameOver())
             {
                 Game.StartNextRound();
-                await Task.Delay(300);
+                await Task.Delay(400);
             }
         }
 
         #endregion
 
         #region Helpers
+
+        private string GetScoresString() =>
+            string.Join("\n", Game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
         private bool IsComputerTurn() => Game.CurrentPlayer?.Name == "Computer";
         private bool IsHumanTurn() => !IsComputerTurn();

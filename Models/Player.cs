@@ -10,7 +10,7 @@ namespace DominoGame.Models
         private int _score;
 
         public string Name { get; private set; }
-        public List<DominoTile> Hand { get; } = new();
+        public List<IDominoTile> Hand { get; } = new();
         public int Score
         {
             get => _score;

@@ -33,7 +33,7 @@ namespace DominoGame.Converters
         /// - If player has doubles → only the largest double is playable.
         /// - If no doubles → only the tile with the highest pip sum is playable.
         /// </summary>
-        private static bool CanPlayOpeningTile(DominoTile tile, Player player)
+        private static bool CanPlayOpeningTile(IDominoTile tile, Player player)
         {
             if (player.Hand == null || !player.Hand.Any())
                 return false;
@@ -52,7 +52,7 @@ namespace DominoGame.Converters
         /// <summary>
         /// Regular play: tile must match either end of the board.
         /// </summary>
-        private static bool CanPlayRegularTile(DominoTile tile, IBoard board)
+        private static bool CanPlayRegularTile(IDominoTile tile, IBoard board)
         {
             if (board.Tiles == null || !board.Tiles.Any())
                 return false;

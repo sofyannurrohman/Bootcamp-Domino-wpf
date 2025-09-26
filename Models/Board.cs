@@ -4,15 +4,15 @@ using System.Collections.ObjectModel;
 
 namespace DominoGame.Models
 {
-    public class Board : IBoard, IEnumerable<DominoTile>
+    public class Board : IBoard, IEnumerable<IDominoTile>
     {
         private BoardNode? _root;
 
         // ObservableCollection for UI binding
-        public ObservableCollection<DominoTile> Tiles { get; } = new();
+        public ObservableCollection<IDominoTile> Tiles { get; } = new();
 
         // Explicit IReadOnlyList implementation for IBoard
-        IReadOnlyList<DominoTile> IBoard.Tiles => Tiles;
+        IReadOnlyList<IDominoTile> IBoard.Tiles => Tiles;
 
         // Ends for gameplay logic
         public int LeftEnd => _root != null ? GetLeftMost(_root).Tile.Left : 0;
@@ -21,7 +21,7 @@ namespace DominoGame.Models
         /// <summary>
         /// Place a tile on the board (left or right)
         /// </summary>
-        public bool PlaceTile(DominoTile tile, bool placeLeft)
+        public bool PlaceTile(IDominoTile tile, bool placeLeft)
         {
             if (_root == null)
             {
@@ -81,7 +81,20 @@ namespace DominoGame.Models
         }
 
         // === IEnumerable Implementation ===
-        public IEnumerator<DominoTile> GetEnumerator() => Tiles.GetEnumerator();
+        public IEnumerator<IDominoTile> GetEnumerator() => Tiles.GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        // Inner node now works with IDominoTile
+        private class BoardNode
+        {
+            public IDominoTile Tile { get; }
+            public BoardNode? Left { get; set; }
+            public BoardNode? Right { get; set; }
+
+            public BoardNode(IDominoTile tile)
+            {
+                Tile = tile;
+            }
+        }
     }
 }
