@@ -3,9 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:DominoGame.Converters"
         xmlns:models="clr-namespace:DominoGame.Models"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        mc:Ignorable="d"
+        xmlns:helpers="clr-namespace:DominoGame.Helpers"
         Title="Domino Block Game"
         Height="600" Width="900"
         WindowStartupLocation="CenterScreen"
@@ -19,18 +17,45 @@
         <conv:TilePlayableOpacityConverter x:Key="TilePlayableOpacityConverter"/>
         <conv:BoolToScaleXConverter x:Key="BoolToScaleXConverter"/>
 
-        <!-- Tile Image Style -->
+        <!-- Binding Proxy -->
+        <helpers:BindingProxy x:Key="TileProxy"/>
+
+        <!-- Base tile image style -->
         <Style x:Key="TileImageStyle" TargetType="Image">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Stretch" Value="Uniform"/>
         </Style>
 
-        <!-- Player Tile Template -->
+        <!-- ================== SHARED TILE IMAGE TEMPLATE ================== -->
+        <DataTemplate x:Key="SharedTileImageTemplate" DataType="{x:Type models:DominoTile}">
+            <Grid>
+                <Grid.Resources>
+                    <!-- BindingProxy must go here, not as child of Grid -->
+                    <helpers:BindingProxy x:Key="TileDataProxy" Data="{Binding}"/>
+                </Grid.Resources>
+
+                <Image Source="{Binding DisplayImage}" 
+               Style="{StaticResource TileImageStyle}"
+               Width="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Width}"
+               Height="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Height}">
+                    <Image.RenderTransform>
+                        <TransformGroup>
+                            <RotateTransform Angle="{Binding Data.RotationAngle, Source={StaticResource TileDataProxy}}"/>
+                            <ScaleTransform ScaleX="{Binding Data.IsFlipped, Source={StaticResource TileDataProxy}, Converter={StaticResource BoolToScaleXConverter}}"
+                                    ScaleY="1"/>
+                        </TransformGroup>
+                    </Image.RenderTransform>
+                </Image>
+            </Grid>
+        </DataTemplate>
+
+
+        <!-- ================== PLAYER TILE TEMPLATE ================== -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
             <Button Margin="4" Padding="6" Background="#2D2D30" Click="TileButton_Click">
                 <Button.IsEnabled>
                     <MultiBinding Converter="{StaticResource TilePlayableConverter}">
-                        <Binding />
+                        <Binding/>
                         <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
                         <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                     </MultiBinding>
@@ -38,57 +63,33 @@
                 <Border CornerRadius="6" Padding="2">
                     <Border.Background>
                         <MultiBinding Converter="{StaticResource TileHighlightConverter}">
-                            <Binding />
+                            <Binding/>
                             <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
                             <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                         </MultiBinding>
                     </Border.Background>
                     <Border.Opacity>
                         <MultiBinding Converter="{StaticResource TilePlayableOpacityConverter}">
-                            <Binding />
+                            <Binding/>
                             <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
                             <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
                         </MultiBinding>
                     </Border.Opacity>
-                    <Image Source="{Binding DisplayImage}" Style="{StaticResource TileImageStyle}" >
-                        <Image.Width>
-                            <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Width"/>
-                        </Image.Width>
-                        <Image.Height>
-                            <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Height"/>
-                        </Image.Height>
-                        <Image.RenderTransform>
-                            <TransformGroup>
-                                <RotateTransform Angle="{Binding RotationAngle}"/>
-                                <ScaleTransform ScaleX="{Binding IsFlipped, Converter={StaticResource BoolToScaleXConverter}}" ScaleY="1"/>
-                            </TransformGroup>
-                        </Image.RenderTransform>
-                    </Image>
+                    <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource SharedTileImageTemplate}"/>
                 </Border>
             </Button>
         </DataTemplate>
 
-        <!-- Board Tile Template -->
+        <!-- ================== BOARD TILE TEMPLATE ================== -->
         <DataTemplate x:Key="BoardTileTemplate" DataType="{x:Type models:DominoTile}">
-            <Image Source="{Binding DisplayImage}" Style="{StaticResource TileImageStyle}">
-                <Image.Width>
-                    <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Width"/>
-                </Image.Width>
-                <Image.Height>
-                    <Binding Path="RotationAngle" Converter="{StaticResource TileSizeConverter}" ConverterParameter="Height"/>
-                </Image.Height>
-                <Image.RenderTransform>
-                    <TransformGroup>
-                        <RotateTransform Angle="{Binding RotationAngle}"/>
-                        <ScaleTransform ScaleX="{Binding IsFlipped, Converter={StaticResource BoolToScaleXConverter}}" ScaleY="1"/>
-                    </TransformGroup>
-                </Image.RenderTransform>
-            </Image>
+            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource SharedTileImageTemplate}"/>
         </DataTemplate>
     </Window.Resources>
 
+    <!-- ================== LAYOUT ================== -->
     <DockPanel LastChildFill="True" Margin="10">
-        <!-- Top Panel: Title, Status, Round & Scores -->
+
+        <!-- Header -->
         <StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
             <TextBlock Text="Domino Block Game"
                        FontSize="22"
@@ -124,7 +125,7 @@
             </StackPanel>
         </StackPanel>
 
-        <!-- Board Tiles -->
+        <!-- Board -->
         <Border DockPanel.Dock="Top" Background="#2D2D30" CornerRadius="8" Padding="10" Margin="0,0,0,10">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <ItemsControl x:Name="BoardItemsControl"
@@ -153,5 +154,6 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
+
     </DockPanel>
 </Window>

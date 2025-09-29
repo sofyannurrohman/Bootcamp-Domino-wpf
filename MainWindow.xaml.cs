@@ -1,7 +1,5 @@
 ﻿using DominoGame.Controllers;
 using DominoGame.Interfaces;
-using DominoGame.Models;
-using DominoGame.Services;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -12,46 +10,42 @@ namespace DominoGameWPF
 {
     public partial class MainWindow : Window
     {
-        public DominoGameController Game { get; private set; }
+        private readonly DominoGameController _game;
         private TaskCompletionSource<bool>? _humanTurnTcs;
 
-        public MainWindow()
+        // ✅ Controller is injected — no manual instantiation
+        public MainWindow(DominoGameController gameController)
         {
-            InitializeComponent();
-            InitializeGame();
+            try
+            {
+                InitializeComponent();
+                _game = gameController;
+                SetupGame();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Startup error:\n{ex}", "Error");
+                throw; // keep this so the debugger still stops where it happens
+            }
         }
 
-        #region Initialization
-
-        private void InitializeGame()
+        private void SetupGame()
         {
-            var boardService = new BoardService();
-            var playerService = new PlayerService();
-            var turnService = new TurnService();
-
-            var board = new Board();
-
-            // DI Services
-            Game = new DominoGameController(boardService, playerService, turnService, board);
-
             // Subscribe to events
-            Game.OnTilePlayed += OnTilePlayed;
-            Game.OnRoundOver += OnRoundOver;
-            Game.OnGameOver += OnGameOver;
-            Game.OnPlayerSkipped += OnPlayerSkipped;
+            _game.OnTilePlayed += OnTilePlayed;
+            _game.OnRoundOver += OnRoundOver;
+            _game.OnGameOver += OnGameOver;
+            _game.OnPlayerSkipped += OnPlayerSkipped;
 
-            // DataContext for WPF binding
-            DataContext = Game;
+            // ✅ Bind UI to controller
+            DataContext = _game;
 
             // Start the game
-            Game.StartGame(maxRounds: 5);
+            _game.StartGame(maxRounds: 5);
 
-            // Start the game loop
+            // Kick off the loop
             _ = GameLoopAsync();
         }
-        #endregion
-
-        #region Event Handlers
 
         private void OnTilePlayed(IPlayer player, IDominoTile tile, bool placedLeft)
         {
@@ -68,14 +62,14 @@ namespace DominoGameWPF
         {
             RefreshUI();
             string msg = winner != null ? $"Winner: {winner.Name}" : "Draw! No winner this round.";
+
             MessageBox.Show(
-                $"Round {Game.CurrentRound} over!\n{msg}\nScores:\n{GetScoresString()}",
+                $"Round {_game.CurrentRound} over!\n{msg}\nScores:\n{GetScoresString()}",
                 "Round Over", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            // Start next round if game not over
-            if (!Game.IsGameOver())
+            if (!_game.IsGameOver())
             {
-                Game.StartNextRound();
+                _game.StartNextRound();
                 RefreshUI();
             }
         }
@@ -87,26 +81,17 @@ namespace DominoGameWPF
                 $"Game Over!\nWinner: {winner.Name}\nFinal Scores:\n{GetScoresString()}",
                 "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
 
-            // Reset skor
-            Game.ResetScores();
+            _game.ResetScores();
+            _game.StartGame(maxRounds: 5);
 
-            // Restart game otomatis
-            Game.StartGame(maxRounds: 5);
-
-            // Pastikan binding UI di-refresh
             DataContext = null;
-            DataContext = Game;
+            DataContext = _game;
             RefreshUI();
         }
 
-
-        #endregion
-
-        #region UI Refresh
-
         private void RefreshUI()
         {
-            var player = Game.CurrentPlayer;
+            var player = _game.CurrentPlayer;
             if (player == null) return;
 
             PlayerHand.ItemsSource = null;
@@ -119,9 +104,9 @@ namespace DominoGameWPF
                     FindVisualChild<Button>(lbi) is Button btn)
                 {
                     btn.IsEnabled = IsHumanTurn() &&
-                                    (!Game.Board.Any() ||
-                                     tile.Matches(Game.Board.LeftEnd) ||
-                                     tile.Matches(Game.Board.RightEnd));
+                                    (!_game.Board.Any() ||
+                                     tile.Matches(_game.Board.LeftEnd) ||
+                                     tile.Matches(_game.Board.RightEnd));
                 }
             }
         }
@@ -137,17 +122,13 @@ namespace DominoGameWPF
             return null;
         }
 
-        #endregion
-
-        #region Player Actions
-
         private void TileButton_Click(object sender, RoutedEventArgs e)
         {
             if (!IsHumanTurn()) return;
             if (sender is not Button { DataContext: IDominoTile tile }) return;
 
-            bool played = Game.PlayTile(Game.CurrentPlayer, tile, true) ||
-                          Game.PlayTile(Game.CurrentPlayer, tile, false);
+            bool played = _game.PlayTile(_game.CurrentPlayer, tile, true) ||
+                          _game.PlayTile(_game.CurrentPlayer, tile, false);
 
             if (!played)
             {
@@ -158,27 +139,23 @@ namespace DominoGameWPF
             _humanTurnTcs?.TrySetResult(true);
         }
 
-        #endregion
-
-        #region Game Loop
-
         private async Task GameLoopAsync()
         {
-            while (!Game.IsGameOver())
+            while (!_game.IsGameOver())
             {
                 RefreshUI();
 
-                var player = Game.CurrentPlayer;
+                var player = _game.CurrentPlayer;
                 if (player == null)
                 {
                     await Task.Delay(100);
                     continue;
                 }
 
-                if (!Game.HasPlayableTile(player))
+                if (!_game.HasPlayableTile(player))
                 {
                     OnPlayerSkipped(player);
-                    Game.NextTurn();
+                    _game.NextTurn();
                     await Task.Delay(800);
                     continue;
                 }
@@ -188,10 +165,9 @@ namespace DominoGameWPF
                 else
                     await HumanTurnAsync();
 
-                // cek ronde selesai
-                if (Game.IsRoundOver())
+                if (_game.IsRoundOver())
                 {
-                    Game.EndRound();
+                    _game.EndRound();
                     RefreshUI();
                     await Task.Delay(400);
                 }
@@ -199,53 +175,46 @@ namespace DominoGameWPF
                 await Task.Delay(50);
             }
 
-            // pastikan human turn tidak stuck
             _humanTurnTcs?.TrySetResult(true);
             RefreshUI();
         }
 
         private async Task ComputerTurnAsync()
         {
-            var player = Game.CurrentPlayer;
-            var nextTileInfo = Game.GetNextPlayableTile(player);
+            var player = _game.CurrentPlayer;
+            var nextTileInfo = _game.GetNextPlayableTile(player);
 
             if (nextTileInfo is (IDominoTile tile, bool placeLeft))
             {
-                Game.PlayTile(player, tile, placeLeft);
+                _game.PlayTile(player, tile, placeLeft);
                 await Task.Delay(500);
             }
             else
             {
                 OnPlayerSkipped(player);
-                Game.NextTurn();
+                _game.NextTurn();
                 await Task.Delay(800);
             }
         }
 
         private async Task HumanTurnAsync()
         {
-            if (Game.IsGameOver() || Game.IsRoundOver())
+            if (_game.IsGameOver() || _game.IsRoundOver())
             {
                 _humanTurnTcs?.TrySetResult(true);
                 return;
             }
 
             _humanTurnTcs = new TaskCompletionSource<bool>();
-            StatusText.Text = $"{Game.CurrentPlayer.Name}'s turn";
+            StatusText.Text = $"{_game.CurrentPlayer.Name}'s turn";
             RefreshUI();
             await _humanTurnTcs.Task;
         }
 
-        #endregion
-
-        #region Helpers
-
         private string GetScoresString() =>
-            string.Join("\n", Game.Players.Select(p => $"{p.Name}: {p.Score} points"));
+            string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
-        private bool IsComputerTurn() => Game.CurrentPlayer?.Name == "Computer";
+        private bool IsComputerTurn() => _game.CurrentPlayer?.Name == "Computer";
         private bool IsHumanTurn() => !IsComputerTurn();
-        
-        #endregion
     }
 }

@@ -12,7 +12,7 @@ namespace DominoGame.Controllers
     {
         // Models
         public IBoard Board { get; private set; }
-        public IDeck Deck { get; private set; } = new Deck();
+        public IDeck Deck { get; }
         public List<IPlayer> Players { get; } = new();
 
         // Services
@@ -70,12 +70,14 @@ namespace DominoGame.Controllers
             IBoardService boardService,
             IPlayerService playerService,
             ITurnService turnService,
-            IBoard board)
+            IBoard board,
+            IDeck deck)
         {
             _boardService = boardService;
             _playerService = playerService;
             _turnService = turnService;
             Board = board;
+            Deck = deck;
         }
         #endregion
 
@@ -111,7 +113,7 @@ namespace DominoGame.Controllers
             foreach (var player in Players)
                 player.Hand.Clear();
 
-            Deck = new Deck();
+            Deck.Reset();      
             Deck.Shuffle();
 
             const int handSize = 7;

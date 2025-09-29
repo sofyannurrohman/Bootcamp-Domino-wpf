@@ -9,5 +9,6 @@ namespace DominoGame.Interfaces
 
         // ambil sejumlah tile dari deck
         List<IDominoTile> DrawTiles(int count);
+        void Reset();
     }
 }
