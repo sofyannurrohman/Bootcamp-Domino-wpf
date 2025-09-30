@@ -27,7 +27,6 @@ namespace DominoGameWPF.ViewModels
             set { _statusText = value; OnPropertyChanged(nameof(StatusText)); }
         }
 
-        // ✅ NEW: Bindable score properties
         public int PlayerScore => Players.Count > 0 ? Players[0].Score : 0;
         public int ComputerScore => Players.Count > 1 ? Players[1].Score : 0;
         public int CurrentRound => _game.CurrentRound;
@@ -180,21 +179,19 @@ namespace DominoGameWPF.ViewModels
                     continue;
                 }
 
-                // ✅ Handle skip with a visible delay
+                // Check if player can play
                 if (!_game.HasPlayableTile(player))
                 {
-                    _game.TriggerSkip(player);  // fires OnPlayerSkipped → updates StatusText
-                    RefreshAll();              // reflect immediately in UI
-
-                    // ✅ Give time to read the skip message
-                    await Task.Delay(5500);
-
-                    _game.NextTurn();
+                    // Trigger skip message
+                    _game.TriggerSkip(player);
                     RefreshAll();
+                    await Task.Delay(1500);    // give time to read message
+
+                    // Move to next player
+                    _game.NextTurn();
                     continue;
                 }
 
-                // ✅ Handle turns
                 if (IsComputerTurn())
                     await ComputerTurnAsync();
                 else
@@ -202,16 +199,13 @@ namespace DominoGameWPF.ViewModels
 
                 _game.NextTurn();
 
-                // ✅ Round over logic AFTER skip was visible
                 if (_game.IsRoundOver())
                 {
-                    // small pause so last action/skip is seen
-                    await Task.Delay(1000);
-
                     _game.EndRound();
                     RefreshScores();
                     RefreshAll();
 
+                    await Task.Yield();
                     await Task.Delay(1500);
 
                     if (!_game.IsGameOver())
@@ -226,6 +220,7 @@ namespace DominoGameWPF.ViewModels
 
             OnGameOver(_game.GetWinner());
         }
+
 
 
         private async Task ComputerTurnAsync()

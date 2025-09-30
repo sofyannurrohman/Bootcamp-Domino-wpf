@@ -15,27 +15,11 @@ namespace DominoGame.Services
                 return -1;
             }
 
-            int startIndex = currentPlayerIndex;
+            // Simply advance to the next player
+            currentPlayerIndex = (currentPlayerIndex + 1) % players.Count;
+            nextPlayer = players[currentPlayerIndex];
 
-            do
-            {
-                currentPlayerIndex = (currentPlayerIndex + 1) % players.Count;
-
-                if (boardService.HasPlayableTile(players[currentPlayerIndex], board))
-                {
-                    nextPlayer = players[currentPlayerIndex];
-                    return currentPlayerIndex;
-                }
-
-                // Looped through all players without finding a playable tile
-                if (currentPlayerIndex == startIndex)
-                    break;
-
-            } while (true);
-
-            // No one can play, keep current player
-            nextPlayer = players[startIndex];
-            return startIndex;
+            return currentPlayerIndex;
         }
     }
 }
