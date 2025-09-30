@@ -107,7 +107,6 @@ namespace DominoGame.Controllers
         {
             CurrentRound++;
             _boardService.ClearBoard(Board);
-            currentPlayerIndex = _random.Next(Players.Count);
 
             foreach (var player in Players)
                 player.Hand.Clear();
@@ -119,13 +118,9 @@ namespace DominoGame.Controllers
             foreach (var player in Players)
                 player.Hand.AddRange(Deck.DrawTiles(handSize));
 
-            // Make sure starting player can play
-            if (!_boardService.HasPlayableTile(CurrentPlayer, Board))
-            {
-                var playableIndex = Players.FindIndex(p => _boardService.HasPlayableTile(p, Board));
-                if (playableIndex >= 0)
-                    currentPlayerIndex = playableIndex;
-            }
+            // Pick starting player who has a playable tile
+            var startingPlayerIndex = Players.FindIndex(p => HasPlayableTileForFirstTurn(p));
+            currentPlayerIndex = startingPlayerIndex >= 0 ? startingPlayerIndex : _random.Next(Players.Count);
         }
 
         public void StartNextRound()
@@ -139,7 +134,11 @@ namespace DominoGame.Controllers
         public bool PlayTile(IPlayer player, IDominoTile tile, bool placeLeft)
         {
             if (player != CurrentPlayer) return false;
-            if (!_boardService.PlaceTile(Board, tile, placeLeft)) return false;
+
+            // Pass player to enforce first-move double rule
+            var played = _boardService.PlaceTile(Board, tile, placeLeft, Board.Tiles.Count == 0 ? player : null);
+
+            if (!played) return false;
 
             _playerService.RemoveTileFromHand(player, tile);
             OnTilePlayed?.Invoke(player, tile, placeLeft);
@@ -155,10 +154,8 @@ namespace DominoGame.Controllers
             currentPlayerIndex = _turnService.NextTurn(
                 Players, currentPlayerIndex, _boardService, Board, out var nextPlayer);
         }
-        public void TriggerSkip(IPlayer player)
-        {
-            OnPlayerSkipped?.Invoke(player);
-        }
+
+        public void TriggerSkip(IPlayer player) => OnPlayerSkipped?.Invoke(player);
         public void SkipCurrentPlayer() => NextTurn();
         #endregion
 
@@ -168,6 +165,16 @@ namespace DominoGame.Controllers
 
         public (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player) =>
             _boardService.GetNextPlayableTile(player, Board);
+
+        // First turn helper: returns true if player has a tile that can be played on empty board
+        public bool HasPlayableTileForFirstTurn(IPlayer player)
+        {
+            if (Board.Tiles.Count > 0)
+                return _boardService.HasPlayableTile(player, Board);
+
+            // Player can play first move if they have any double OR no doubles exist
+            return player.Hand.Count > 0;
+        }
         #endregion
 
         #region Game Flow
@@ -186,7 +193,6 @@ namespace DominoGame.Controllers
                                    .Sum(p => p.Hand.Sum(t => t.Left + t.Right));
                 score -= winner.Hand.Sum(t => t.Left + t.Right);
                 winner.Score += Math.Max(score, 0);
-                // ✅ Explicitly tell UI winner's score changed
                 OnPropertyChanged(nameof(Players));
             }
 

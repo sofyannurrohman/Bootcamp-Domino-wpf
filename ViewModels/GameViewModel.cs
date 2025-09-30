@@ -15,9 +15,11 @@ namespace DominoGameWPF.ViewModels
     {
         private readonly DominoGameController _game;
         private TaskCompletionSource<bool>? _humanTurnTcs;
+
         public ObservableCollection<IDominoTile> PlayerHand { get; } = new();
         public ObservableCollection<IDominoTile> BoardTiles { get; } = new();
         public ObservableCollection<IPlayer> Players { get; } = new();
+
         private string _statusText = "";
         public string StatusText
         {
@@ -31,18 +33,27 @@ namespace DominoGameWPF.ViewModels
         public int MaxRounds => _game.MaxRounds;
         public IPlayer? CurrentPlayer => _game.CurrentPlayer;
         public IBoard Board => _game.Board;
+
         public ICommand PlayTileCommand { get; }
 
         public GameViewModel(DominoGameController gameController)
         {
             _game = gameController;
-            _game.StartGame(maxRounds: 5);
-            BindPlayers();
+
             _game.OnTilePlayed += OnTilePlayed;
             _game.OnPlayerSkipped += OnPlayerSkipped;
             _game.OnRoundOver += OnRoundOver;
             _game.OnGameOver += OnGameOver;
+
             PlayTileCommand = new RelayCommand<IDominoTile>(PlayTile);
+
+            StartGame();
+        }
+
+        private void StartGame()
+        {
+            _game.StartGame(maxRounds: 5);
+            BindPlayers();
             _ = GameLoopAsync();
             RefreshAll();
         }
@@ -62,47 +73,35 @@ namespace DominoGameWPF.ViewModels
 
         private void OnRoundOver(IPlayer? winner)
         {
-            string msg = winner != null
-                ? $"Winner of this round is {winner.Name}\n"
-                : "Draw! No winner of this round.\n";
+            var msg = winner != null
+                ? $"Winner of this round: {winner.Name}\n"
+                : "Draw! No winner this round.\n";
 
             msg += string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
-
             StatusText = $"Round {CurrentRound} over!";
             RefreshAll();
-            RefreshScores();
 
             Application.Current.Dispatcher.Invoke(() =>
-            {
-                MessageBox.Show(msg, $"Round {CurrentRound} Over", MessageBoxButton.OK, MessageBoxImage.Information);
-            });
+                MessageBox.Show(msg, $"Round {CurrentRound} Over", MessageBoxButton.OK, MessageBoxImage.Information));
         }
 
         private void OnGameOver(IPlayer winner)
         {
-            string msg = $"Game Over! Match Winner is {winner.Name}\n" +
-                         string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
+            var msg = $"Game Over! Winner: {winner.Name}\n" +
+                      string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
             StatusText = msg;
             RefreshAll();
 
             Application.Current.Dispatcher.Invoke(() =>
-            {
-                MessageBox.Show(msg, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information);
-            });
+                MessageBox.Show(msg, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information));
 
             ResetUI();
-            _game.StartGame(maxRounds: 5);
-
-            BindPlayers(); 
-
-            _ = GameLoopAsync();
-            RefreshAll();
+            StartGame();
         }
-
         #endregion
 
-        #region Refresh
+        #region Refresh Methods
         private void RefreshHand()
         {
             PlayerHand.Clear();
@@ -145,7 +144,18 @@ namespace DominoGameWPF.ViewModels
         {
             if (!IsHumanTurn() || _humanTurnTcs == null) return;
 
-            var played = _game.PlayTile(CurrentPlayer, tile, true) || _game.PlayTile(CurrentPlayer, tile, false);
+            // Enforce first-move double rule for human
+            if (_game.Board.Tiles.Count == 0)
+            {
+                var hasDouble = CurrentPlayer!.Hand.Any(t => t.Left == t.Right);
+                if (hasDouble && tile.Left != tile.Right)
+                {
+                    StatusText = "You must play a double tile on the first move!";
+                    return;
+                }
+            }
+
+            bool played = _game.PlayTile(CurrentPlayer, tile, true) || _game.PlayTile(CurrentPlayer, tile, false);
 
             if (!played)
             {
@@ -169,14 +179,16 @@ namespace DominoGameWPF.ViewModels
                     await Task.Delay(50);
                     continue;
                 }
+
                 if (!_game.HasPlayableTile(player))
                 {
                     _game.TriggerSkip(player);
                     RefreshAll();
-                    await Task.Delay(1500); 
+                    await Task.Delay(1000);
                     _game.NextTurn();
                     continue;
                 }
+
                 if (IsComputerTurn())
                     await ComputerTurnAsync();
                 else
@@ -187,11 +199,8 @@ namespace DominoGameWPF.ViewModels
                 if (_game.IsRoundOver())
                 {
                     _game.EndRound();
-                    RefreshScores();
                     RefreshAll();
-
-                    await Task.Yield();
-                    await Task.Delay(1500);
+                    await Task.Delay(1000);
 
                     if (!_game.IsGameOver())
                     {
@@ -211,29 +220,24 @@ namespace DominoGameWPF.ViewModels
             var player = CurrentPlayer;
             if (player == null) return;
 
-            IDominoTile? tileToPlay = null;
-            bool placeLeft = true;
+            var next = _game.GetNextPlayableTile(player);
 
-            if (BoardTiles.Count == 0 && player.Hand.Count > 0)
+            if (next is (IDominoTile tileToPlay, bool placeLeft))
             {
-                tileToPlay = player.Hand
-                    .Where(t => t.Left == t.Right)
-                    .OrderByDescending(t => t.Left)
-                    .FirstOrDefault()
-                    ?? player.Hand.OrderByDescending(t => t.Left + t.Right).First();
-            }
-            else
-            {
-                var next = _game.GetNextPlayableTile(player);
-                if (next is (IDominoTile tile, bool left))
+                // Enforce first-move double rule for computer
+                if (_game.Board.Tiles.Count == 0)
                 {
-                    tileToPlay = tile;
-                    placeLeft = left;
+                    var hasDouble = player.Hand.Any(t => t.Left == t.Right);
+                    if (hasDouble && tileToPlay.Left != tileToPlay.Right)
+                    {
+                        // Skip non-double if double exists
+                        _game.TriggerSkip(player);
+                        RefreshAll();
+                        await Task.Delay(800);
+                        return;
+                    }
                 }
-            }
 
-            if (tileToPlay != null)
-            {
                 _game.PlayTile(player, tileToPlay, placeLeft);
                 StatusText = $"{player.Name} played [{tileToPlay.Left}|{tileToPlay.Right}]";
             }
@@ -246,10 +250,10 @@ namespace DominoGameWPF.ViewModels
             await Task.Delay(800);
         }
 
+
         private async Task HumanTurnAsync()
         {
-            if (_game.IsGameOver() || _game.IsRoundOver())
-                return;
+            if (_game.IsGameOver() || _game.IsRoundOver()) return;
 
             _humanTurnTcs = new TaskCompletionSource<bool>();
             StatusText = $"{CurrentPlayer?.Name}'s turn";
@@ -262,28 +266,21 @@ namespace DominoGameWPF.ViewModels
         #region Helpers
         private bool IsComputerTurn() => CurrentPlayer?.Name == "Computer";
         private bool IsHumanTurn() => !IsComputerTurn();
-        #endregion
-
-        #region INotifyPropertyChanged
-        public event PropertyChangedEventHandler? PropertyChanged;
-        private void OnPropertyChanged(string propertyName) =>
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
         private void ResetUI()
         {
             PlayerHand.Clear();
             BoardTiles.Clear();
             StatusText = "";
-
             OnPropertyChanged(nameof(CurrentRound));
             OnPropertyChanged(nameof(MaxRounds));
             OnPropertyChanged(nameof(CurrentPlayer));
             RefreshScores();
         }
+
         private void BindPlayers()
         {
             Players.Clear();
-
             foreach (var player in _game.Players)
             {
                 Players.Add(player);
@@ -296,6 +293,12 @@ namespace DominoGameWPF.ViewModels
 
             RefreshScores();
         }
+        #endregion
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler? PropertyChanged;
+        private void OnPropertyChanged(string propertyName) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         #endregion
     }
 }
