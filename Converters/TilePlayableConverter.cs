@@ -15,21 +15,36 @@ namespace DominoGame.Converters
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values?.Length != 3)
+            if (values?.Length != 3 ||
+                values[0] is not DominoTile tile ||
+                values[1] is not Player player ||
+                values[2] is not IBoard board)
                 return false;
 
-            if (values[0] is not DominoTile tile) return false;
-            if (values[1] is not Player player) return false;
-            if (values[2] is not IBoard board) return false;
+            return TilePlayRules.CanPlay(tile, player, board);
+        }
 
-            // First move: opening rule
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+            => throw new NotSupportedException("TilePlayableConverter does not support ConvertBack.");
+    }
+
+    /// <summary>
+    /// Static helper class so other converters/components can share the same logic.
+    /// </summary>
+    public static class TilePlayRules
+    {
+        public static bool CanPlay(DominoTile tile, Player player, IBoard board)
+        {
+            if (tile == null || player == null || board == null)
+                return false;
+
             return !board.Tiles.Any()
                 ? CanPlayOpeningTile(tile, player)
                 : CanPlayRegularTile(tile, board);
         }
 
         /// <summary>
-        /// Opening rule (first tile of the round):
+        /// Opening rule:
         /// - If player has doubles → only the largest double is playable.
         /// - If no doubles → only the tile with the highest pip sum is playable.
         /// </summary>
@@ -59,8 +74,5 @@ namespace DominoGame.Converters
 
             return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd);
         }
-
-        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-            => throw new NotSupportedException("TilePlayableConverter does not support ConvertBack.");
     }
 }

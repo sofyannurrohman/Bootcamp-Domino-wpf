@@ -113,14 +113,14 @@ namespace DominoGame.Controllers
             foreach (var player in Players)
                 player.Hand.Clear();
 
-            Deck.Reset();      
+            Deck.Reset();
             Deck.Shuffle();
 
             const int handSize = 7;
             foreach (var player in Players)
                 player.Hand.AddRange(Deck.DrawTiles(handSize));
 
-            // Ensure CurrentPlayer can play
+            // Make sure starting player can play
             if (!_boardService.HasPlayableTile(CurrentPlayer, Board))
             {
                 var playableIndex = Players.FindIndex(p => _boardService.HasPlayableTile(p, Board));
@@ -144,8 +144,6 @@ namespace DominoGame.Controllers
 
             _playerService.RemoveTileFromHand(player, tile);
             OnTilePlayed?.Invoke(player, tile, placeLeft);
-
-            NextTurn();
             return true;
         }
         #endregion
@@ -157,11 +155,11 @@ namespace DominoGame.Controllers
 
             currentPlayerIndex = _turnService.NextTurn(
                 Players, currentPlayerIndex, _boardService, Board, out var nextPlayer);
-
-            if (!_boardService.HasPlayableTile(nextPlayer, Board))
-                OnPlayerSkipped?.Invoke(nextPlayer);
         }
-
+        public void TriggerSkip(IPlayer player)
+        {
+            OnPlayerSkipped?.Invoke(player);
+        }
         public void SkipCurrentPlayer() => NextTurn();
         #endregion
 
@@ -189,6 +187,9 @@ namespace DominoGame.Controllers
                                    .Sum(p => p.Hand.Sum(t => t.Left + t.Right));
                 score -= winner.Hand.Sum(t => t.Left + t.Right);
                 winner.Score += Math.Max(score, 0);
+
+                // ✅ Explicitly tell UI winner's score changed
+                OnPropertyChanged(nameof(Players));
             }
 
             OnRoundOver?.Invoke(winner);

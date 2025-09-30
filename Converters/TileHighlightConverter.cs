@@ -30,17 +30,13 @@ namespace DominoGame.Converters
                 return NormalBrush;
 
             if (values[0] is not DominoTile tile) return NormalBrush;
-            if (values[1] is not Player) return NormalBrush; // unused, signature requirement
+            if (values[1] is not Player player) return NormalBrush;
             if (values[2] is not IBoard board) return NormalBrush;
 
-            // First move: all tiles highlighted
-            if (!board.Tiles.Any())
-                return HighlightBrush;
+            // ✅ Correct call (use the shared rule class)
+            bool isPlayable = TilePlayRules.CanPlay(tile, player, board);
 
-            // Highlight only playable tiles (matches left or right end)
-            return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)
-                ? HighlightBrush
-                : NormalBrush;
+            return isPlayable ? HighlightBrush : NormalBrush;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

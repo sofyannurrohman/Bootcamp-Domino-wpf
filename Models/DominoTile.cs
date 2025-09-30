@@ -49,8 +49,6 @@ namespace DominoGame.Models
             {
                 orientation = value;
                 OnPropertyChanged(nameof(Orientation));
-
-                // Keep RotationAngle in sync with Orientation
                 RotationAngle = orientation == Orientation.VERTICAL ? 90 : 0;
             }
         }
