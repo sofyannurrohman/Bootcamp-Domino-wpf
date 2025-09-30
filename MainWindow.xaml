@@ -5,7 +5,7 @@
         xmlns:models="clr-namespace:DominoGame.Models"
         xmlns:helpers="clr-namespace:DominoGame.Helpers"
         Title="Domino Block Game"
-        Height="600" Width="900"
+        Height="600" Width="1200"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E">
 
@@ -87,7 +87,7 @@
             <TextBlock Text="Domino Block Game"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#FFD700"/>
+                       Foreground="#CF0A0A"/>
             <TextBlock Text="{Binding StatusText}"
                        FontSize="16"
                        Foreground="White"
@@ -140,6 +140,5 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
-
     </DockPanel>
 </Window>

@@ -17,7 +17,7 @@ namespace DominoGame.Services
 
             if (concreteBoard.Tiles.Count == 0)
             {
-                // First move: only allow doubles
+                // First move only allow doubles
                 if (tile.Left != tile.Right)
                     return false;
 
@@ -50,7 +50,7 @@ namespace DominoGame.Services
                 var firstDouble = player.Hand.FirstOrDefault(t => t.Left == t.Right);
                 if (firstDouble != null)
                     return (firstDouble, true); // placeLeft doesn't matter
-                return null; // no playable tile
+                return null;
             }
 
             int? left = LeftEnd(board);
@@ -65,7 +65,7 @@ namespace DominoGame.Services
                     return (tile, false);
             }
 
-            return null; // no playable tile
+            return null;
         }
 
         public bool HasPlayableTile(IPlayer player, IBoard board) =>

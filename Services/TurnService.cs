@@ -6,7 +6,6 @@ namespace DominoGame.Services
 {
     public class TurnService : ITurnService
     {
-        // Use IBoardService, not BoardService
         public int NextTurn(List<IPlayer> players, int currentPlayerIndex, IBoardService boardService, IBoard board, out IPlayer nextPlayer)
         {
             if (players.Count == 0)

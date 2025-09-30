@@ -16,8 +16,8 @@ namespace DominoGame.Converters
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values?.Length != 3 ||
-                values[0] is not DominoTile tile ||
-                values[1] is not Player player ||
+                values[0] is not IDominoTile tile ||
+                values[1] is not IPlayer player ||
                 values[2] is not IBoard board)
                 return false;
 
@@ -33,7 +33,7 @@ namespace DominoGame.Converters
     /// </summary>
     public static class TilePlayRules
     {
-        public static bool CanPlay(DominoTile tile, Player player, IBoard board)
+        public static bool CanPlay(IDominoTile tile, IPlayer player, IBoard board)
         {
             if (tile == null || player == null || board == null)
                 return false;
@@ -48,7 +48,7 @@ namespace DominoGame.Converters
         /// - If player has doubles → only the largest double is playable.
         /// - If no doubles → only the tile with the highest pip sum is playable.
         /// </summary>
-        private static bool CanPlayOpeningTile(IDominoTile tile, Player player)
+        private static bool CanPlayOpeningTile(IDominoTile tile, IPlayer player)
         {
             if (player.Hand == null || !player.Hand.Any())
                 return false;

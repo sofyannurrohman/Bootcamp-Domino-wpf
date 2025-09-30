@@ -22,7 +22,6 @@ namespace DominoGame.Controllers
 
         private int currentPlayerIndex;
         private readonly Random _random = new(Guid.NewGuid().GetHashCode());
-
         public IPlayer CurrentPlayer => Players.Count > 0 ? Players[currentPlayerIndex] : null!;
 
         // PropertyChanged for WPF
@@ -187,7 +186,6 @@ namespace DominoGame.Controllers
                                    .Sum(p => p.Hand.Sum(t => t.Left + t.Right));
                 score -= winner.Hand.Sum(t => t.Left + t.Right);
                 winner.Score += Math.Max(score, 0);
-
                 // ✅ Explicitly tell UI winner's score changed
                 OnPropertyChanged(nameof(Players));
             }

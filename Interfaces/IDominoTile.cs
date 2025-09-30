@@ -13,7 +13,6 @@ namespace DominoGame.Interfaces
         int TotalPip { get; }
         Orientation Orientation { get; set; }
         double RotationAngle { get; }
-
         bool Matches(int value);
         void Flip();
         bool IsDouble { get; }

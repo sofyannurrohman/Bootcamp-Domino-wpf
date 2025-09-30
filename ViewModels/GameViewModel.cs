@@ -15,11 +15,9 @@ namespace DominoGameWPF.ViewModels
     {
         private readonly DominoGameController _game;
         private TaskCompletionSource<bool>? _humanTurnTcs;
-
         public ObservableCollection<IDominoTile> PlayerHand { get; } = new();
         public ObservableCollection<IDominoTile> BoardTiles { get; } = new();
         public ObservableCollection<IPlayer> Players { get; } = new();
-
         private string _statusText = "";
         public string StatusText
         {
@@ -33,27 +31,21 @@ namespace DominoGameWPF.ViewModels
         public int MaxRounds => _game.MaxRounds;
         public IPlayer? CurrentPlayer => _game.CurrentPlayer;
         public IBoard Board => _game.Board;
-
         public ICommand PlayTileCommand { get; }
 
         public GameViewModel(DominoGameController gameController)
         {
             _game = gameController;
-
             _game.StartGame(maxRounds: 5);
             BindPlayers();
-
             _game.OnTilePlayed += OnTilePlayed;
             _game.OnPlayerSkipped += OnPlayerSkipped;
             _game.OnRoundOver += OnRoundOver;
             _game.OnGameOver += OnGameOver;
-
             PlayTileCommand = new RelayCommand<IDominoTile>(PlayTile);
             _ = GameLoopAsync();
             RefreshAll();
-
         }
-
 
         #region Event Handlers
         private void OnTilePlayed(IPlayer player, IDominoTile tile, bool placedLeft)
@@ -71,8 +63,8 @@ namespace DominoGameWPF.ViewModels
         private void OnRoundOver(IPlayer? winner)
         {
             string msg = winner != null
-                ? $"Winner: {winner.Name}\n"
-                : "Draw! No winner this round.\n";
+                ? $"Winner of this round is {winner.Name}\n"
+                : "Draw! No winner of this round.\n";
 
             msg += string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
@@ -88,7 +80,7 @@ namespace DominoGameWPF.ViewModels
 
         private void OnGameOver(IPlayer winner)
         {
-            string msg = $"Game Over! Winner: {winner.Name}\n" +
+            string msg = $"Game Over! Match Winner is {winner.Name}\n" +
                          string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
             StatusText = msg;
@@ -107,7 +99,6 @@ namespace DominoGameWPF.ViewModels
             _ = GameLoopAsync();
             RefreshAll();
         }
-
 
         #endregion
 
@@ -178,20 +169,14 @@ namespace DominoGameWPF.ViewModels
                     await Task.Delay(50);
                     continue;
                 }
-
-                // Check if player can play
                 if (!_game.HasPlayableTile(player))
                 {
-                    // Trigger skip message
                     _game.TriggerSkip(player);
                     RefreshAll();
-                    await Task.Delay(1500);    // give time to read message
-
-                    // Move to next player
+                    await Task.Delay(1500); 
                     _game.NextTurn();
                     continue;
                 }
-
                 if (IsComputerTurn())
                     await ComputerTurnAsync();
                 else
@@ -220,8 +205,6 @@ namespace DominoGameWPF.ViewModels
 
             OnGameOver(_game.GetWinner());
         }
-
-
 
         private async Task ComputerTurnAsync()
         {
