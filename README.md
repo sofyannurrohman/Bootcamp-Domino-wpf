@@ -35,11 +35,11 @@ A classic **Domino Block Game** implemented in **C# WPF** using **MVVM architect
 This project uses **MVVM + DI pattern**:
 
 MainWindow (View)
-↓
+->
 GameViewModel
-↓
+->
 DominoGameController
-↓
+->
 Services:
 - BoardService
 - PlayerService
@@ -94,24 +94,24 @@ git clone https://github.com/yourusername/domino-wpf.git
 ---
 ## Gameplay Rules
 
-Opening Move:
+1. Opening Move:
 
 If player has doubles, only the largest double can start.
 
 Otherwise, the tile with the highest pip sum starts.
 
-Normal Play:
+2. Normal Play:
 
 Tiles must match either left or right end of the board.
 
 Tiles are flipped if necessary to match board ends.
 
-Round End:
+3. Round End:
 
 When no player can play or all hands are empty.
 
 Scores are calculated based on remaining tiles in opponent hands.
 
-Game End:
+4. Game End:
 
 Maximum rounds reached or a player reaches target score.
