@@ -102,7 +102,7 @@ git clone https://github.com/yourusername/domino-wpf.git
    
 4. Game End: Maximum rounds reached or a player reaches target score.
 
-## Visual Quick Diagram (UML)
+## Visual Quick Diagram
 
 Shout out to kristoferpamung for providing UML Diagram you can check out in:
 https://gist.github.com/kristoferpamung/b1d31936fe1711c5ae4cd7d55bea995b
