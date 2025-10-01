@@ -29,8 +29,8 @@ namespace DominoGame.Services
             var playerEmpty = players.FirstOrDefault(p => !p.Hand.Any());
             if (playerEmpty != null) return playerEmpty;
 
-            var minSum = players.Min(p => p.Hand.Sum(t => t.Left + t.Right));
-            var winners = players.Where(p => p.Hand.Sum(t => t.Left + t.Right) == minSum).ToList();
+            var minSum = players.Min(p => p.Hand.Sum(t => t.PipLeft + t.PipRight));
+            var winners = players.Where(p => p.Hand.Sum(t => t.PipLeft + t.PipRight) == minSum).ToList();
             return winners.Count == 1 ? winners[0] : null;
         }
 

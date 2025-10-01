@@ -190,8 +190,8 @@ namespace DominoGame.Controllers
             if (winner != null)
             {
                 int score = Players.Where(p => p != winner)
-                                   .Sum(p => p.Hand.Sum(t => t.Left + t.Right));
-                score -= winner.Hand.Sum(t => t.Left + t.Right);
+                                   .Sum(p => p.Hand.Sum(t => t.PipLeft + t.PipRight));
+                score -= winner.Hand.Sum(t => t.PipLeft + t.PipRight);
                 winner.Score += Math.Max(score, 0);
                 OnPropertyChanged(nameof(Players));
             }

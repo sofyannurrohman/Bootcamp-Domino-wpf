@@ -8,8 +8,8 @@ namespace DominoGame.Interfaces
 {
     public interface IDominoTile
     {
-        int Left { get; set; }
-        int Right { get; set; }
+        int PipLeft { get; set; }
+        int PipRight { get; set; }
         int TotalPip { get; }
         Orientation Orientation { get; set; }
         double RotationAngle { get; }

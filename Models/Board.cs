@@ -8,8 +8,8 @@ namespace DominoGame.Models
     {
         public ObservableCollection<IDominoTile> Tiles { get; } = new();
         IReadOnlyList<IDominoTile> IBoard.Tiles => Tiles;
-        public int LeftEnd => Tiles.Count > 0 ? Tiles[0].Left : 0;
-        public int RightEnd => Tiles.Count > 0 ? Tiles[^1].Right : 0;
+        public int LeftEnd => Tiles.Count > 0 ? Tiles[0].PipLeft : 0;
+        public int RightEnd => Tiles.Count > 0 ? Tiles[^1].PipRight : 0;
         public void Clear() => Tiles.Clear();
         public void AddTileToBoard(IDominoTile tile, bool atStart)
         {

@@ -56,8 +56,8 @@ namespace DominoGame.Converters
             var doubles = player.Hand.Where(t => t.IsDouble).ToList();
             if (doubles.Any())
             {
-                int maxDouble = doubles.Max(t => t.Left);
-                return tile.IsDouble && tile.Left == maxDouble;
+                int maxDouble = doubles.Max(t => t.PipLeft);
+                return tile.IsDouble && tile.PipLeft == maxDouble;
             }
 
             int maxPip = player.Hand.Max(t => t.TotalPip);

@@ -8,9 +8,7 @@ namespace DominoGame.Services
     {
         public int? LeftEnd(IBoard board) => board.Tiles.Count > 0 ? board.LeftEnd : null;
         public int? RightEnd(IBoard board) => board.Tiles.Count > 0 ? board.RightEnd : null;
-
         public void ClearBoard(IBoard board) => board.Clear();
-
         public bool PlaceTile(IBoard board, IDominoTile tile, bool placeLeft, IPlayer? player = null)
         {
             var concreteBoard = board as Board ?? throw new InvalidOperationException("Board must be Board type");
@@ -20,8 +18,8 @@ namespace DominoGame.Services
                 // First move: if player provided, enforce double rule
                 if (player != null)
                 {
-                    var hasDouble = player.Hand.Any(t => t.Left == t.Right);
-                    if (hasDouble && tile.Left != tile.Right)
+                    var hasDouble = player.Hand.Any(t => t.PipLeft == t.PipRight);
+                    if (hasDouble && tile.PipLeft != tile.PipRight)
                         return false; // Cannot play non-double if a double exists
                 }
 
@@ -37,7 +35,7 @@ namespace DominoGame.Services
             if (!tile.Matches(matchValue))
                 return false;
 
-            if ((placeLeft && tile.Right != matchValue) || (!placeLeft && tile.Left != matchValue))
+            if ((placeLeft && tile.PipRight != matchValue) || (!placeLeft && tile.PipLeft != matchValue))
                 tile.Flip();
 
             concreteBoard.AddTileToBoard(tile, placeLeft);
@@ -53,10 +51,10 @@ namespace DominoGame.Services
             // First move: prioritize first double
             if (board.Tiles.Count == 0)
             {
-                var firstDouble = player.Hand.FirstOrDefault(t => t.Left == t.Right);
+                var firstDouble = player.Hand.FirstOrDefault(t => t.PipLeft == t.PipRight);
                 if (firstDouble != null)
                     return (firstDouble, true); // placeLeft doesn't matter
-                return (player.Hand.OrderByDescending(t => t.Left + t.Right).First(), true);
+                return (player.Hand.OrderByDescending(t => t.PipLeft + t.PipRight).First(), true);
             }
 
             int? left = LeftEnd(board);

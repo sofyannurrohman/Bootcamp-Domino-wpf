@@ -15,11 +15,9 @@ namespace DominoGameWPF.ViewModels
     {
         private readonly DominoGameController _game;
         private TaskCompletionSource<bool>? _humanTurnTcs;
-
         public ObservableCollection<IDominoTile> PlayerHand { get; } = new();
         public ObservableCollection<IDominoTile> BoardTiles { get; } = new();
         public ObservableCollection<IPlayer> Players { get; } = new();
-
         private string _statusText = "";
         public string StatusText
         {
@@ -61,7 +59,7 @@ namespace DominoGameWPF.ViewModels
         #region Event Handlers
         private void OnTilePlayed(IPlayer player, IDominoTile tile, bool placedLeft)
         {
-            StatusText = $"{player.Name} played [{tile.Left}|{tile.Right}] on {(placedLeft ? "left" : "right")}.";
+            StatusText = $"{player.Name} played [{tile.PipLeft}|{tile.PipRight}] on {(placedLeft ? "left" : "right")}.";
             RefreshAll();
         }
 
@@ -147,8 +145,8 @@ namespace DominoGameWPF.ViewModels
             // Enforce first-move double rule for human
             if (_game.Board.Tiles.Count == 0)
             {
-                var hasDouble = CurrentPlayer!.Hand.Any(t => t.Left == t.Right);
-                if (hasDouble && tile.Left != tile.Right)
+                var hasDouble = CurrentPlayer!.Hand.Any(t => t.PipLeft == t.PipRight);
+                if (hasDouble && tile.PipLeft != tile.PipRight)
                 {
                     StatusText = "You must play a double tile on the first move!";
                     return;
@@ -227,8 +225,8 @@ namespace DominoGameWPF.ViewModels
                 // Enforce first-move double rule for computer
                 if (_game.Board.Tiles.Count == 0)
                 {
-                    var hasDouble = player.Hand.Any(t => t.Left == t.Right);
-                    if (hasDouble && tileToPlay.Left != tileToPlay.Right)
+                    var hasDouble = player.Hand.Any(t => t.PipLeft == t.PipRight);
+                    if (hasDouble && tileToPlay.PipLeft != tileToPlay.PipRight)
                     {
                         // Skip non-double if double exists
                         _game.TriggerSkip(player);
@@ -239,7 +237,7 @@ namespace DominoGameWPF.ViewModels
                 }
 
                 _game.PlayTile(player, tileToPlay, placeLeft);
-                StatusText = $"{player.Name} played [{tileToPlay.Left}|{tileToPlay.Right}]";
+                StatusText = $"{player.Name} played [{tileToPlay.PipLeft}|{tileToPlay.PipRight}]";
             }
             else
             {
