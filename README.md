@@ -14,8 +14,6 @@ A classic **Domino Block Game** implemented in **C# WPF** using **MVVM architect
 - [Gameplay Rules](#gameplay-rules)  
 - [Quick Visual Diagram](#quick-visual-diagram)  
 - [Contributing](#contributing)  
-- [License](#license)  
-
 ---
 
 ## Features
@@ -101,8 +99,13 @@ git clone https://github.com/yourusername/domino-wpf.git
 3. Round End: When no player can play or all hands are empty. Scores are calculated based on remaining tiles in opponent hands.
    
 4. Game End: Maximum rounds reached or a player reaches target score.
-
+   
+---
 ## Visual Quick Diagram
 
-Shout out to kristoferpamung for providing UML Diagram you can check out in:
+Shout out to **kristoferpamung** for providing UML Diagram you can check out in:
 https://gist.github.com/kristoferpamung/b1d31936fe1711c5ae4cd7d55bea995b
+
+---
+## Contributing
+Feel free to pull-request this project :) . Happy Develop :D
