@@ -4,20 +4,23 @@ using DominoGame.Interfaces.Services;
 using DominoGame.Models;
 using DominoGame.Services;
 using DominoGameWPF;
-using System.Configuration;
-using System.Data;
-using System.Windows;
+using DominoGameWPF.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Windows;
+
 namespace DominoGame
 {
-
     public partial class App : Application
     {
         public static IServiceProvider Services { get; private set; } = null!;
+
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
             ConfigureServices();
+
+            // Resolve MainWindow with GameViewModel injected
             var mainWindow = Services.GetRequiredService<MainWindow>();
             mainWindow.Show();
         }
@@ -38,11 +41,18 @@ namespace DominoGame
             // Register controller
             services.AddSingleton<DominoGameController>();
 
+            // Register ViewModel
+            services.AddSingleton<GameViewModel>();
+
             // Register MainWindow
-            services.AddSingleton<MainWindow>();
+            services.AddSingleton<MainWindow>(sp =>
+            {
+                // Inject GameViewModel into MainWindow
+                var vm = sp.GetRequiredService<GameViewModel>();
+                return new MainWindow(vm);
+            });
 
             Services = services.BuildServiceProvider();
         }
     }
-
 }

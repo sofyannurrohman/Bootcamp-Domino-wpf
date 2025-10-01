@@ -17,24 +17,23 @@ namespace DominoGame.Models
         private Orientation orientation;
         private double rotationAngle;
         private BitmapImage _originalImage;
-
-        public int Left
+        public int PipLeft
         {
             get => left;
-            set { left = value; OnPropertyChanged(nameof(Left)); }
+            set { left = value; OnPropertyChanged(nameof(PipLeft)); }
         }
 
-        public int Right
+        public int PipRight
         {
             get => right;
-            set { right = value; OnPropertyChanged(nameof(Right)); }
+            set { right = value; OnPropertyChanged(nameof(PipRight)); }
         }
 
         public int OriginalLeft { get; private set; }
         public int OriginalRight { get; private set; }
 
         public bool IsDouble => OriginalLeft == OriginalRight;
-        public int TotalPip => Left + Right;
+        public int TotalPip => PipLeft + PipRight;
 
         public bool IsFlipped
         {
@@ -49,8 +48,6 @@ namespace DominoGame.Models
             {
                 orientation = value;
                 OnPropertyChanged(nameof(Orientation));
-
-                // Keep RotationAngle in sync with Orientation
                 RotationAngle = orientation == Orientation.VERTICAL ? 90 : 0;
             }
         }
@@ -69,29 +66,26 @@ namespace DominoGame.Models
 
         public DominoTile(int left, int right)
         {
-            Left = OriginalLeft = left;
-            Right = OriginalRight = right;
+            PipLeft = OriginalLeft = left;
+            PipRight = OriginalRight = right;
             DisplayImage = LoadImage(left, right);
 
             // Default orientation
             Orientation = IsDouble ? Orientation.VERTICAL : Orientation.HORIZONTAL;
         }
 
-        /// <summary>
-        /// Checks if this tile matches a given pip value.
-        /// </summary>
-        public bool Matches(int number) => Left == number || Right == number;
+        public bool Matches(int number) => PipLeft == number || PipRight == number;
 
         public void Flip()
         {
-            (Left, Right) = (Right, Left);
+            (PipLeft, PipRight) = (PipRight, PipLeft);
             IsFlipped = !IsFlipped;
         }
 
         public void ResetOrientation()
         {
-            Left = OriginalLeft;
-            Right = OriginalRight;
+            PipLeft = OriginalLeft;
+            PipRight = OriginalRight;
             IsFlipped = false;
             Orientation = IsDouble ? Orientation.VERTICAL : Orientation.HORIZONTAL;
         }

@@ -28,7 +28,7 @@ namespace DominoGame.Converters
             {
                 // Swap width/height for vertical orientation (90 or 270 degrees)
                 return param.Equals("Width", StringComparison.OrdinalIgnoreCase)
-                    ? NormalHeight
+                    ? 60
                     : NormalWidth;
             }
         }

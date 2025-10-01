@@ -20,8 +20,8 @@ namespace DominoGame.Converters
             if (values?.Length != 3)
                 return Dimmed;
 
-            if (values[0] is not DominoTile tile) return Dimmed;
-            if (values[1] is not Player) return Dimmed; // Player is unused, only needed for signature
+            if (values[0] is not IDominoTile tile) return Dimmed;
+            if (values[1] is not IPlayer) return Dimmed;
             if (values[2] is not IBoard board) return Dimmed;
 
             // First move: all tiles are playable

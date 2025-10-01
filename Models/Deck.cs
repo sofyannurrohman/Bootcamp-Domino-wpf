@@ -9,18 +9,15 @@ namespace DominoGame.Models
     {
         public List<IDominoTile> DominoTiles { get; private set; } = new();
         private readonly Random _random = new(Guid.NewGuid().GetHashCode());
-
         public Deck()
         {
             InitializeTiles();
         }
-
         public void Reset()
         {
             DominoTiles.Clear();
             InitializeTiles();
         }
-
         private void InitializeTiles()
         {
             for (byte i = 0; i <= 6; i++)
@@ -31,12 +28,10 @@ namespace DominoGame.Models
                 }
             }
         }
-
         public void Shuffle()
         {
             DominoTiles = DominoTiles.OrderBy(_ => _random.Next()).ToList();
         }
-
         public List<IDominoTile> DrawTiles(int count)
         {
             var tiles = DominoTiles.Take(count).ToList();

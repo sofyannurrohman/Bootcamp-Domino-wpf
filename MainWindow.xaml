@@ -5,7 +5,7 @@
         xmlns:models="clr-namespace:DominoGame.Models"
         xmlns:helpers="clr-namespace:DominoGame.Helpers"
         Title="Domino Block Game"
-        Height="600" Width="900"
+        Height="600" Width="1200"
         WindowStartupLocation="CenterScreen"
         Background="#1E1E1E">
 
@@ -30,36 +30,29 @@
         <DataTemplate x:Key="SharedTileImageTemplate" DataType="{x:Type models:DominoTile}">
             <Grid>
                 <Grid.Resources>
-                    <!-- BindingProxy must go here, not as child of Grid -->
                     <helpers:BindingProxy x:Key="TileDataProxy" Data="{Binding}"/>
                 </Grid.Resources>
 
                 <Image Source="{Binding DisplayImage}" 
-               Style="{StaticResource TileImageStyle}"
-               Width="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Width}"
-               Height="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Height}">
+                       Style="{StaticResource TileImageStyle}"
+                       Width="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Width}"
+                       Height="{Binding RotationAngle, Converter={StaticResource TileSizeConverter}, ConverterParameter=Height}">
                     <Image.RenderTransform>
                         <TransformGroup>
                             <RotateTransform Angle="{Binding Data.RotationAngle, Source={StaticResource TileDataProxy}}"/>
                             <ScaleTransform ScaleX="{Binding Data.IsFlipped, Source={StaticResource TileDataProxy}, Converter={StaticResource BoolToScaleXConverter}}"
-                                    ScaleY="1"/>
+                                            ScaleY="1"/>
                         </TransformGroup>
                     </Image.RenderTransform>
                 </Image>
             </Grid>
         </DataTemplate>
 
-
         <!-- ================== PLAYER TILE TEMPLATE ================== -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
-            <Button Margin="4" Padding="6" Background="#2D2D30" Click="TileButton_Click">
-                <Button.IsEnabled>
-                    <MultiBinding Converter="{StaticResource TilePlayableConverter}">
-                        <Binding/>
-                        <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                        <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                    </MultiBinding>
-                </Button.IsEnabled>
+            <Button Margin="4" Padding="6" Background="#2D2D30"
+                    Command="{Binding DataContext.PlayTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    CommandParameter="{Binding}">
                 <Border CornerRadius="6" Padding="2">
                     <Border.Background>
                         <MultiBinding Converter="{StaticResource TileHighlightConverter}">
@@ -94,8 +87,8 @@
             <TextBlock Text="Domino Block Game"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#FFD700"/>
-            <TextBlock x:Name="StatusText"
+                       Foreground="#CF0A0A"/>
+            <TextBlock Text="{Binding StatusText}"
                        FontSize="16"
                        Foreground="White"
                        Margin="0,5,0,0"/>
@@ -108,28 +101,22 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <ItemsControl ItemsSource="{Binding Players}" Margin="20,0,0,0">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock FontSize="16" Foreground="#00BFFF">
-                                <TextBlock.Text>
-                                    <MultiBinding StringFormat="{}{0}: {1} points">
-                                        <Binding Path="Name"/>
-                                        <Binding Path="Score"/>
-                                    </MultiBinding>
-                                </TextBlock.Text>
-                            </TextBlock>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20,0,0,0">
+                    <TextBlock Text="You: " FontSize="16" Foreground="#FFD700"/>
+                    <TextBlock Text="{Binding PlayerScore}" FontSize="16" Foreground="White" Margin="0,0,20,0"/>
+
+                    <TextBlock Text="Computer: " FontSize="16" Foreground="#FFD700"/>
+                    <TextBlock Text="{Binding ComputerScore}" FontSize="16" Foreground="White"/>
+                </StackPanel>
+
+
             </StackPanel>
         </StackPanel>
 
         <!-- Board -->
         <Border DockPanel.Dock="Top" Background="#2D2D30" CornerRadius="8" Padding="10" Margin="0,0,0,10">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                <ItemsControl x:Name="BoardItemsControl"
-                              ItemsSource="{Binding Board.Tiles}"
+                <ItemsControl ItemsSource="{Binding BoardTiles}"
                               ItemTemplate="{StaticResource BoardTileTemplate}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -143,8 +130,7 @@
         <!-- Player Hand -->
         <Border DockPanel.Dock="Bottom" Background="#252526" CornerRadius="8" Padding="10" Margin="0,10,0,0">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                <ItemsControl x:Name="PlayerHand"
-                              ItemsSource="{Binding CurrentPlayer.Hand}"
+                <ItemsControl ItemsSource="{Binding PlayerHand}"
                               ItemTemplate="{StaticResource PlayerTileTemplate}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -154,6 +140,5 @@
                 </ItemsControl>
             </ScrollViewer>
         </Border>
-
     </DockPanel>
 </Window>
