@@ -70,7 +70,7 @@ Converters:
 
 ```bash
 git clone https://github.com/yourusername/domino-wpf.git
-
+```
 2. Open in Visual Studio 2022+.
 
 3. Restore NuGet packages.
