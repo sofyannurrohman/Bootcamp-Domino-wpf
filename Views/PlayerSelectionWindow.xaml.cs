@@ -9,12 +9,12 @@ namespace DominoGameWPF.Views
         public int TotalPlayers { get; private set; }
         public int AiPlayers { get; private set; }
         public int MaxRounds { get; private set; }
+        public int MatchPoints { get; private set; }
 
         public PlayerSelectionWindow()
         {
             InitializeComponent();
 
-            // Hook event handlers
             TotalPlayersCombo.SelectionChanged += ValidateSelection;
             AiPlayersCombo.SelectionChanged += ValidateSelection;
         }
@@ -51,8 +51,8 @@ namespace DominoGameWPF.Views
             TotalPlayers = int.Parse((TotalPlayersCombo.SelectedItem as ComboBoxItem)?.Content.ToString());
             AiPlayers = int.Parse((AiPlayersCombo.SelectedItem as ComboBoxItem)?.Content.ToString());
             MaxRounds = int.Parse((RoundsCombo.SelectedItem as ComboBoxItem)?.Content.ToString());
+            MatchPoints = int.Parse((MatchPointsCombo.SelectedItem as ComboBoxItem)?.Content.ToString()); // ✅ NEW
 
-            // Final safety check before closing
             if (AiPlayers >= TotalPlayers)
             {
                 MessageBox.Show(

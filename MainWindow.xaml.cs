@@ -23,12 +23,14 @@ namespace DominoGameWPF
                 vm.StartGame(
                     numberOfPlayers: selectionWindow.TotalPlayers,
                     numberOfAI: selectionWindow.AiPlayers,
-                    maxRounds: selectionWindow.MaxRounds
+                    maxRounds: selectionWindow.MaxRounds,
+                    matchPoints: selectionWindow.MatchPoints
                 );
             }
             else
             {
                 Application.Current.Shutdown();
+                return;
             }
 
                 DataContext = vm;

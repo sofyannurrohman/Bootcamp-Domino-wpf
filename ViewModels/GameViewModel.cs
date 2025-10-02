@@ -46,13 +46,20 @@ namespace DominoGameWPF.ViewModels
             PlayTileCommand = new RelayCommand<IDominoTile>(PlayTile);
         }
 
-        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5)
+        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5, int matchPoints = 30)
         {
-            _game.StartGame(numberOfPlayers: numberOfPlayers, numberOfAI: numberOfAI, maxRounds: maxRounds);
+            _game.StartGame(
+                numberOfPlayers: numberOfPlayers,
+                numberOfAI: numberOfAI,
+                maxRounds: maxRounds,
+                matchPoints: matchPoints 
+            );
+
             BindPlayers();
             _ = GameLoopAsync();
             RefreshAll();
         }
+
 
         #region Event Handlers
         private void OnTilePlayed(IPlayer player, IDominoTile tile, bool placedLeft)

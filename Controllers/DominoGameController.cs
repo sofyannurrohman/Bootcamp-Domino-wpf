@@ -63,6 +63,19 @@ namespace DominoGame.Controllers
                 }
             }
         }
+        private int _matchPoints = 30;
+        public int MatchPoints
+        {
+            get => _matchPoints;
+            private set
+            {
+                if (_matchPoints != value)
+                {
+                    _matchPoints = value;
+                    OnPropertyChanged(nameof(MatchPoints));
+                }
+            }
+        }
 
         #region Constructor
         public DominoGameController(
@@ -81,9 +94,10 @@ namespace DominoGame.Controllers
         #endregion
 
         #region Game Setup
-        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5)
+        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5, int matchPoints = 30)
         {
             Players.Clear();
+            MatchPoints = matchPoints;
             MaxRounds = maxRounds;
             CurrentRound = 0;
 
@@ -209,7 +223,7 @@ namespace DominoGame.Controllers
 
             OnRoundOver?.Invoke(winner);
 
-            if (Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds)
+            if (Players.Any(p => p.Score >= MatchPoints) || CurrentRound > MaxRounds)
             {
                 var gameWinner = _playerService.GetGameWinner(Players);
                 if (gameWinner != null)
@@ -217,7 +231,7 @@ namespace DominoGame.Controllers
             }
         }
 
-        public bool IsGameOver() => Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds;
+        public bool IsGameOver() => Players.Any(p => p.Score >= MatchPoints) || CurrentRound > MaxRounds;
         public IPlayer? GetWinner() => _playerService.GetGameWinner(Players);
         public void ResetScores() => _playerService.ResetScores(Players);
         #endregion

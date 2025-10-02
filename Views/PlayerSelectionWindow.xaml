@@ -1,8 +1,8 @@
-<Window x:Class="DominoGameWPF.Views.PlayerSelectionWindow"
+﻿<Window x:Class="DominoGameWPF.Views.PlayerSelectionWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Player Setup"
-        Height="300" Width="380"
+        Height="340" Width="380"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Background="#1E1E1E">
@@ -21,9 +21,15 @@
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
+                    <!-- Row 0 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- Row 1 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- Row 2 -->
                     <RowDefinition Height="Auto"/>
+                    <!-- Row 3 -->
+                    <RowDefinition Height="Auto"/>
+                    <!-- Row 4 -->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1.2*"/>
@@ -35,7 +41,7 @@
                            Text="Total Players:"
                            Foreground="#1DCD9F"
                            FontSize="14"
-						   FontWeight="Bold"
+                           FontWeight="Bold"
                            VerticalAlignment="Center"
                            Margin="0,5"/>
 
@@ -57,7 +63,7 @@
                 <!-- AI Players -->
                 <TextBlock Grid.Row="1" Grid.Column="0"
                            Text="AI Players:"
-						   FontWeight="Bold"
+                           FontWeight="Bold"
                            Foreground="#1DCD9F"
                            FontSize="14"
                            VerticalAlignment="Center"
@@ -83,7 +89,7 @@
                 <TextBlock Grid.Row="2" Grid.Column="0"
                            Text="Max Rounds:"
                            Foreground="#1DCD9F"
-						   FontWeight="Bold"
+                           FontWeight="Bold"
                            FontSize="14"
                            VerticalAlignment="Center"
                            Margin="0,5"/>
@@ -103,8 +109,32 @@
                     <ComboBoxItem Content="15"/>
                 </ComboBox>
 
-                <!-- Start Button -->
-                <Button Grid.Row="3"
+                <!-- ✅ Match Points -->
+                <TextBlock Grid.Row="3" Grid.Column="0"
+                           Text="Match Points:"
+                           Foreground="#1DCD9F"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Margin="0,5"/>
+
+                <ComboBox x:Name="MatchPointsCombo"
+                          Grid.Row="3"
+                          Grid.Column="1"
+                          Width="150"
+                          Height="28"
+                          Margin="0,5"
+                          SelectedIndex="0"
+                          Background="#3A3A3D"
+                          Foreground="Black"
+                          BorderBrush="#555">
+                    <ComboBoxItem Content="30"/>
+                    <ComboBoxItem Content="50"/>
+                    <ComboBoxItem Content="100"/>
+                </ComboBox>
+
+                <!-- ✅ Start Button moved to next row -->
+                <Button Grid.Row="4"
                         Grid.ColumnSpan="2"
                         Content="Start Game"
                         Margin="0,20,0,0"
