@@ -7,7 +7,7 @@
         Title="Domino Block Game"
         Height="600" Width="1200"
         WindowStartupLocation="CenterScreen"
-        Background="#1E1E1E">
+        Background="#000000">
 
     <Window.Resources>
         <!-- Converters -->
@@ -87,7 +87,7 @@
             <TextBlock Text="Domino Block Game"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#CF0A0A"/>
+                       Foreground="#1DCD9F"/>
             <TextBlock Text="{Binding StatusText}"
                        FontSize="16"
                        Foreground="White"

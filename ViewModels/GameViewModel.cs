@@ -1,5 +1,7 @@
 ﻿using DominoGame.Controllers;
+using DominoGame.Helpers;
 using DominoGame.Interfaces;
+using DominoGameWPF.Views;
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -7,7 +9,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using DominoGame.Helpers;
 
 namespace DominoGameWPF.ViewModels
 {
@@ -31,9 +32,8 @@ namespace DominoGameWPF.ViewModels
         public int MaxRounds => _game.MaxRounds;
         public IPlayer? CurrentPlayer => _game.CurrentPlayer;
         public IBoard Board => _game.Board;
-
         public ICommand PlayTileCommand { get; }
-
+        public ICommand StartGameCommand { get; }
         public GameViewModel(DominoGameController gameController)
         {
             _game = gameController;
@@ -44,13 +44,11 @@ namespace DominoGameWPF.ViewModels
             _game.OnGameOver += OnGameOver;
 
             PlayTileCommand = new RelayCommand<IDominoTile>(PlayTile);
-
-            StartGame();
         }
 
-        private void StartGame()
+        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5)
         {
-            _game.StartGame(maxRounds: 5);
+            _game.StartGame(numberOfPlayers: numberOfPlayers, numberOfAI: numberOfAI, maxRounds: maxRounds);
             BindPlayers();
             _ = GameLoopAsync();
             RefreshAll();
@@ -72,7 +70,7 @@ namespace DominoGameWPF.ViewModels
         private void OnRoundOver(IPlayer? winner)
         {
             var msg = winner != null
-                ? $"Winner of this round: {winner.Name}\n"
+                ? $"Winner of this round is {winner.Name}\n"
                 : "Draw! No winner this round.\n";
 
             msg += string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
@@ -85,7 +83,7 @@ namespace DominoGameWPF.ViewModels
 
         private void OnGameOver(IPlayer winner)
         {
-            var msg = $"Game Over! Winner: {winner.Name}\n" +
+            var msg = $"Game Over! The Winner is {winner.Name}\n" +
                       string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
             StatusText = msg;
@@ -138,11 +136,11 @@ namespace DominoGameWPF.ViewModels
         #endregion
 
         #region Commands
-        private void PlayTile(IDominoTile tile)
+        private async void PlayTile(IDominoTile tile)
         {
             if (!IsHumanTurn() || _humanTurnTcs == null) return;
 
-            // Enforce first-move double rule for human
+            // Enforce first-move double rule
             if (_game.Board.Tiles.Count == 0)
             {
                 var hasDouble = CurrentPlayer!.Hand.Any(t => t.PipLeft == t.PipRight);
@@ -151,11 +149,67 @@ namespace DominoGameWPF.ViewModels
                     StatusText = "You must play a double tile on the first move!";
                     return;
                 }
+
+                // ✅ First move – place immediately without popup
+                bool firstPlaced = _game.PlayTile(CurrentPlayer, tile, placeLeft: true);
+                if (!firstPlaced)
+                {
+                    StatusText = "Cannot play this tile!";
+                    return;
+                }
+
+                _humanTurnTcs.TrySetResult(true);
+                RefreshAll();
+                return;
             }
 
-            bool played = _game.PlayTile(CurrentPlayer, tile, true) || _game.PlayTile(CurrentPlayer, tile, false);
+            // ✅ For NON-FIRST move — check playable sides
+            bool canPlaceLeft =
+                _game.Board.Tiles.First().PipLeft == tile.PipLeft ||
+                _game.Board.Tiles.First().PipLeft == tile.PipRight;
 
-            if (!played)
+            bool canPlaceRight =
+                _game.Board.Tiles.Last().PipRight == tile.PipLeft ||
+                _game.Board.Tiles.Last().PipRight == tile.PipRight;
+
+            if (!canPlaceLeft && !canPlaceRight)
+            {
+                StatusText = "Cannot play this tile!";
+                return;
+            }
+
+            bool placeLeft;
+
+            // ✅ Auto-place if only one side is possible
+            if (canPlaceLeft && !canPlaceRight)
+            {
+                placeLeft = true;
+            }
+            else if (!canPlaceLeft && canPlaceRight)
+            {
+                placeLeft = false;
+            }
+            else
+            {
+                // ✅ Popup ONLY when BOTH SIDES are valid
+                var directionWindow = new LeftRightSelectionWindow
+                {
+                    Owner = Application.Current.MainWindow
+                };
+
+                bool? result = directionWindow.ShowDialog();
+
+                if (result != true)
+                {
+                    StatusText = "No placement selected.";
+                    return;
+                }
+
+                placeLeft = directionWindow.PlaceLeft;
+            }
+
+            bool success = _game.PlayTile(CurrentPlayer, tile, placeLeft);
+            if (!success)
             {
                 StatusText = "Cannot play this tile!";
                 return;
@@ -164,6 +218,10 @@ namespace DominoGameWPF.ViewModels
             _humanTurnTcs.TrySetResult(true);
             RefreshAll();
         }
+
+
+
+
         #endregion
 
         #region Game Loop
@@ -248,7 +306,6 @@ namespace DominoGameWPF.ViewModels
             await Task.Delay(800);
         }
 
-
         private async Task HumanTurnAsync()
         {
             if (_game.IsGameOver() || _game.IsRoundOver()) return;
@@ -262,8 +319,14 @@ namespace DominoGameWPF.ViewModels
         #endregion
 
         #region Helpers
-        private bool IsComputerTurn() => CurrentPlayer?.Name == "Computer";
+        private bool IsComputerTurn()
+        {
+            return CurrentPlayer?.Name.StartsWith("Computer", StringComparison.OrdinalIgnoreCase) == true;
+        }
+
         private bool IsHumanTurn() => !IsComputerTurn();
+
+
 
         private void ResetUI()
         {

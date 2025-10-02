@@ -71,8 +71,6 @@ namespace DominoGame.Services
             return null;
         }
 
-
-
         public bool HasPlayableTile(IPlayer player, IBoard board) =>
             GetNextPlayableTile(player, board) != null;
     }

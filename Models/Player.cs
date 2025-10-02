@@ -29,11 +29,6 @@ namespace DominoGame.Models
             Name = name;
             Score = 0;
         }
-        public bool PlayDominoTile(IDominoTile dominoTile)
-        {
-            return Hand.Contains(dominoTile);
-        }
-
         #region INotifyPropertyChanged
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged(string propertyName) =>

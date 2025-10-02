@@ -81,14 +81,24 @@ namespace DominoGame.Controllers
         #endregion
 
         #region Game Setup
-        public void StartGame(int maxRounds = 5)
+        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5)
         {
             Players.Clear();
-            Players.Add(new Player("You"));
-            Players.Add(new Player("Computer"));
-
             MaxRounds = maxRounds;
             CurrentRound = 0;
+
+            // Add human players
+            int humanPlayers = numberOfPlayers - numberOfAI;
+            for (int i = 1; i <= humanPlayers; i++)
+            {
+                Players.Add(new Player($"Player {i}"));
+            }
+
+            // Add AI players
+            for (int i = 1; i <= numberOfAI; i++)
+            {
+                Players.Add(new Player($"Computer {i}"));
+            }
 
             foreach (var player in Players)
             {
@@ -102,6 +112,7 @@ namespace DominoGame.Controllers
 
             StartNewRound();
         }
+
 
         private void StartNewRound()
         {

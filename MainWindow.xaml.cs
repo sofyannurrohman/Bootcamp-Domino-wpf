@@ -1,6 +1,7 @@
 ﻿using DominoGame.Controllers;
 using DominoGame.Interfaces;
 using DominoGameWPF.ViewModels;
+using DominoGameWPF.Views;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,7 +15,23 @@ namespace DominoGameWPF
         public MainWindow(GameViewModel vm)
         {
             InitializeComponent();
-            DataContext = vm;
+            var selectionWindow = new PlayerSelectionWindow();
+            var result = selectionWindow.ShowDialog();
+
+            if (result == true)
+            {
+                vm.StartGame(
+                    numberOfPlayers: selectionWindow.TotalPlayers,
+                    numberOfAI: selectionWindow.AiPlayers,
+                    maxRounds: selectionWindow.MaxRounds
+                );
+            }
+            else
+            {
+                Application.Current.Shutdown();
+            }
+
+                DataContext = vm;
         }
     }
 }

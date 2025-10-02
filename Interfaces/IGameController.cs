@@ -13,7 +13,6 @@ namespace DominoGame.Interfaces
         int CurrentRound { get; }
         int MaxRounds { get; }
         #region Game Setup
-        void StartGame(int maxRounds = 5);
         /// Start a new round without restarting the whole game
         void StartNextRound();
 
