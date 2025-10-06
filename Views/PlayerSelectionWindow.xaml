@@ -4,10 +4,13 @@
         Title="Player Setup"
         Height="340" Width="380"
         WindowStartupLocation="CenterScreen"
-        ResizeMode="NoResize"
-        Background="#1E1E1E">
+        ResizeMode="NoResize">
 
-    <Border CornerRadius="10" Padding="20" Background="#000000">
+    <Window.Background>
+        <ImageBrush ImageSource="/Assets/bg.jpg" Stretch="UniformToFill" />
+    </Window.Background>
+
+    <Border CornerRadius="10" Padding="20" Background="Transparent">
         <StackPanel>
 
             <!-- Title -->

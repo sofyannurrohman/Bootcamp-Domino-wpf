@@ -9,8 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Assets\bg.jpg" />
     <None Remove="Assets\Sounds\backsound.mp3" />
     <None Remove="Assets\Sounds\click.m4a" />
+    <None Remove="Assets\wood2.jpg" />
   </ItemGroup>
 
   <ItemGroup>
@@ -98,8 +100,14 @@
     <Content Include="Assets\1_2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Assets\bg.jpg">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Assets\Sounds\click.m4a">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\wood2.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
