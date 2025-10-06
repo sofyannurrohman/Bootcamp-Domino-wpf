@@ -54,7 +54,6 @@ namespace DominoGameWPF.ViewModels
                 maxRounds: maxRounds,
                 matchPoints: matchPoints 
             );
-
             BindPlayers();
             _ = GameLoopAsync();
             RefreshAll();
@@ -93,15 +92,40 @@ namespace DominoGameWPF.ViewModels
             var msg = $"Game Over! The Winner is {winner.Name}\n" +
                       string.Join("\n", _game.Players.Select(p => $"{p.Name}: {p.Score} points"));
 
-            StatusText = msg;
-            RefreshAll();
-
             Application.Current.Dispatcher.Invoke(() =>
-                MessageBox.Show(msg, "Game Over", MessageBoxButton.OK, MessageBoxImage.Information));
+            {
+                var gameOverWindow = new GameOverWindow(msg);
+                bool? result = gameOverWindow.ShowDialog();
 
-            ResetUI();
-            StartGame();
+                if (result == true && gameOverWindow.PlayAgain)
+                {
+                    // ✅ Restart game setup (PlayerSelectionWindow)
+                    var setupWindow = new PlayerSelectionWindow();
+                    if (setupWindow.ShowDialog() == true)
+                    {
+                        StartGame(setupWindow.TotalPlayers, setupWindow.AiPlayers, setupWindow.MaxRounds, setupWindow.MatchPoints);
+                    }
+                }
+                else
+                {
+                    // ✅ Exit to Main Menu
+                    var mainMenu = new MainMenuWindow();
+                    mainMenu.Show();
+
+                    // Close current game window
+                    foreach (Window window in Application.Current.Windows)
+                    {
+                        if (window is MainWindow)
+                        {
+                            window.Close();
+                            break;
+                        }
+                    }
+                }
+            });
         }
+
+
         #endregion
 
         #region Refresh Methods
@@ -157,7 +181,6 @@ namespace DominoGameWPF.ViewModels
                     return;
                 }
 
-                // ✅ First move – place immediately without popup
                 bool firstPlaced = _game.PlayTile(CurrentPlayer, tile, placeLeft: true);
                 if (!firstPlaced)
                 {
@@ -170,7 +193,7 @@ namespace DominoGameWPF.ViewModels
                 return;
             }
 
-            // ✅ For NON-FIRST move — check playable sides
+            // For NON-FIRST move — check playable sides
             bool canPlaceLeft =
                 _game.Board.Tiles.First().PipLeft == tile.PipLeft ||
                 _game.Board.Tiles.First().PipLeft == tile.PipRight;
@@ -187,7 +210,7 @@ namespace DominoGameWPF.ViewModels
 
             bool placeLeft;
 
-            // ✅ Auto-place if only one side is possible
+            // Auto-place if only one side is possible
             if (canPlaceLeft && !canPlaceRight)
             {
                 placeLeft = true;
@@ -198,7 +221,7 @@ namespace DominoGameWPF.ViewModels
             }
             else
             {
-                // ✅ Popup ONLY when BOTH SIDES are valid
+                // Popup ONLY when BOTH SIDES are valid
                 var directionWindow = new LeftRightSelectionWindow
                 {
                     Owner = Application.Current.MainWindow
@@ -221,13 +244,11 @@ namespace DominoGameWPF.ViewModels
                 StatusText = "Cannot play this tile!";
                 return;
             }
+            SoundManager.PlaySfx("click.m4a");
 
             _humanTurnTcs.TrySetResult(true);
             RefreshAll();
         }
-
-
-
 
         #endregion
 

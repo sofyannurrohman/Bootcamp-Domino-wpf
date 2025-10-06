@@ -191,7 +191,6 @@ namespace DominoGame.Controllers
         public (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player) =>
             _boardService.GetNextPlayableTile(player, Board);
 
-        // First turn helper: returns true if player has a tile that can be played on empty board
         public bool HasPlayableTileForFirstTurn(IPlayer player)
         {
             if (Board.Tiles.Count > 0)
