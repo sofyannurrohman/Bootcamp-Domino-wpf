@@ -1,4 +1,5 @@
-﻿using DominoGame;
+﻿using DominoGame.Helpers;
+using DominoGame;
 using DominoGameWPF.ViewModels;
 using System.Windows;
 
@@ -9,6 +10,7 @@ namespace DominoGameWPF.Views
         public MainMenuWindow()
         {
             InitializeComponent();
+            SoundManager.PlayBackgroundMusic("backsound.mp3", 0.3);
         }
 
         private void StartGame_Click(object sender, RoutedEventArgs e)
@@ -16,22 +18,25 @@ namespace DominoGameWPF.Views
             var setupWindow = new PlayerSelectionWindow();
             if (setupWindow.ShowDialog() == true)
             {
-                // ✅ Resolve GameViewModel from DI
                 var vm = App.Services.GetService(typeof(GameViewModel)) as GameViewModel;
-
-                // ✅ Start game based on setup selection
                 vm.StartGame(setupWindow.TotalPlayers, setupWindow.AiPlayers, setupWindow.MaxRounds, setupWindow.MatchPoints);
 
-                // ✅ Open Main Game Window
                 var mainGame = new MainWindow(vm);
                 mainGame.Show();
 
-                this.Close(); // Optional: close the menu
+                this.Close();
             }
+        }
+
+        private void Options_Click(object sender, RoutedEventArgs e)
+        {
+            var optionsWindow = new OptionsWindow { Owner = this };
+            optionsWindow.ShowDialog();
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
+            SoundManager.StopBackgroundMusic();
             Application.Current.Shutdown();
         }
     }

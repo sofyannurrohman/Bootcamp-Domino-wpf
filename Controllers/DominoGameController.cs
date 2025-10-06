@@ -101,14 +101,12 @@ namespace DominoGame.Controllers
             MaxRounds = maxRounds;
             CurrentRound = 0;
 
-            // Add human players
             int humanPlayers = numberOfPlayers - numberOfAI;
             for (int i = 1; i <= humanPlayers; i++)
             {
                 Players.Add(new Player($"Player {i}"));
             }
 
-            // Add AI players
             for (int i = 1; i <= numberOfAI; i++)
             {
                 Players.Add(new Player($"Computer {i}"));
@@ -143,7 +141,6 @@ namespace DominoGame.Controllers
             foreach (var player in Players)
                 player.Hand.AddRange(Deck.DrawTiles(handSize));
 
-            // Pick starting player who has a playable tile
             var startingPlayerIndex = Players.FindIndex(p => HasPlayableTileForFirstTurn(p));
             currentPlayerIndex = startingPlayerIndex >= 0 ? startingPlayerIndex : _random.Next(Players.Count);
         }
@@ -160,7 +157,6 @@ namespace DominoGame.Controllers
         {
             if (player != CurrentPlayer) return false;
 
-            // Pass player to enforce first-move double rule
             var played = _boardService.PlaceTile(Board, tile, placeLeft, Board.Tiles.Count == 0 ? player : null);
 
             if (!played) return false;
@@ -196,7 +192,6 @@ namespace DominoGame.Controllers
             if (Board.Tiles.Count > 0)
                 return _boardService.HasPlayableTile(player, Board);
 
-            // Player can play first move if they have any double OR no doubles exist
             return player.Hand.Count > 0;
         }
         #endregion

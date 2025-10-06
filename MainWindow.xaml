@@ -4,29 +4,23 @@
         xmlns:conv="clr-namespace:DominoGame.Converters"
         xmlns:models="clr-namespace:DominoGame.Models"
         xmlns:helpers="clr-namespace:DominoGame.Helpers"
-        Title="Domino Block Game"
+        Title="Domino Block Game 🂃"
         Height="600" Width="1200"
         WindowStartupLocation="CenterScreen"
         Background="#000000">
 
     <Window.Resources>
-        <!-- Converters -->
         <conv:TileSizeConverter x:Key="TileSizeConverter" NormalWidth="60" NormalHeight="120"/>
         <conv:TileHighlightConverter x:Key="TileHighlightConverter"/>
         <conv:TilePlayableConverter x:Key="TilePlayableConverter"/>
         <conv:TilePlayableOpacityConverter x:Key="TilePlayableOpacityConverter"/>
         <conv:BoolToScaleXConverter x:Key="BoolToScaleXConverter"/>
-
-        <!-- Binding Proxy -->
         <helpers:BindingProxy x:Key="TileProxy"/>
-
-        <!-- Base tile image style -->
         <Style x:Key="TileImageStyle" TargetType="Image">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Stretch" Value="Uniform"/>
         </Style>
 
-        <!-- ================== SHARED TILE IMAGE TEMPLATE ================== -->
         <DataTemplate x:Key="SharedTileImageTemplate" DataType="{x:Type models:DominoTile}">
             <Grid>
                 <Grid.Resources>
@@ -48,12 +42,11 @@
             </Grid>
         </DataTemplate>
 
-        <!-- ================== PLAYER TILE TEMPLATE ================== -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
-            <Button Margin="4" Padding="6" Background="#2D2D30"
+            <Button Margin="10" Padding="2" Background="#2D2D30" Height="150" Width="90"
                     Command="{Binding DataContext.PlayTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                     CommandParameter="{Binding}">
-                <Border CornerRadius="6" Padding="2">
+                <Border CornerRadius="4" Padding="1">
                     <Border.Background>
                         <MultiBinding Converter="{StaticResource TileHighlightConverter}">
                             <Binding/>
@@ -79,12 +72,10 @@
         </DataTemplate>
     </Window.Resources>
 
-    <!-- ================== LAYOUT ================== -->
     <DockPanel LastChildFill="True" Margin="10">
 
-        <!-- Header -->
         <StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
-            <TextBlock Text="Domino Block Game"
+            <TextBlock Text="Domino Block Game 🂃"
                        FontSize="22"
                        FontWeight="Bold"
                        Foreground="#1DCD9F"/>
@@ -113,7 +104,6 @@
             </StackPanel>
         </StackPanel>
 
-        <!-- Board -->
         <Border DockPanel.Dock="Top" Background="#2D2D30" CornerRadius="8" Padding="10" Margin="0,0,0,10">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding BoardTiles}"
@@ -127,7 +117,6 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Player Hand -->
         <Border DockPanel.Dock="Bottom" Background="#252526" CornerRadius="8" Padding="10" Margin="0,10,0,0">
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding PlayerHand}"

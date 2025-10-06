@@ -11,7 +11,7 @@
         <StackPanel>
 
             <!-- Title -->
-            <TextBlock Text="Domino Block Game"
+            <TextBlock Text="Domino Block Game 🂃"
                        Foreground="#1DCD9F"
                        FontSize="20"
                        FontWeight="Bold"
@@ -33,7 +33,7 @@
 
                 <!-- Total Players -->
                 <TextBlock Grid.Row="0" Grid.Column="0"
-                           Text="Total Players:"
+                           Text="Total 👤"
                            Foreground="#1DCD9F"
                            FontSize="14"
                            FontWeight="Bold"
@@ -57,7 +57,7 @@
 
                 <!-- AI Players -->
                 <TextBlock Grid.Row="1" Grid.Column="0"
-                           Text="AI Players:"
+                           Text="Total 🤖"
                            FontWeight="Bold"
                            Foreground="#1DCD9F"
                            FontSize="14"
@@ -82,7 +82,7 @@
 
                 <!-- Max Rounds -->
                 <TextBlock Grid.Row="2" Grid.Column="0"
-                           Text="Max Rounds:"
+                           Text="Round 🔁"
                            Foreground="#1DCD9F"
                            FontWeight="Bold"
                            FontSize="14"
@@ -106,7 +106,7 @@
 
                 <!-- ✅ Match Points -->
                 <TextBlock Grid.Row="3" Grid.Column="0"
-                           Text="Match Points:"
+                           Text="Point to 🏆"
                            Foreground="#1DCD9F"
                            FontWeight="Bold"
                            FontSize="14"
@@ -128,15 +128,14 @@
                     <ComboBoxItem Content="100"/>
                 </ComboBox>
 
-                <!-- ✅ Start Button moved to next row -->
                 <Button Grid.Row="4"
                         Grid.ColumnSpan="2"
-                        Content="Start Game"
+                        Content="▶   Start Game"
                         Margin="0,20,0,0"
                         Padding="8"
                         Height="35"
                         Background="#169976"
-                        Foreground="Black"
+                        Foreground="white"
                         FontWeight="Bold"
                         BorderThickness="0"
                         Cursor="Hand"

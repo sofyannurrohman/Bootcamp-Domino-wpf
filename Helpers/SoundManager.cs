@@ -9,6 +9,8 @@ namespace DominoGame.Helpers
         private static MediaPlayer backgroundPlayer;
         private static MediaPlayer sfxPlayer;
 
+        private static double lastVolume = 0.3; // Store last non-zero volume for mute toggle
+
         public static void PlayBackgroundMusic(string fileName, double volume = 0.3)
         {
             try
@@ -18,6 +20,7 @@ namespace DominoGame.Helpers
                 backgroundPlayer = new MediaPlayer();
                 backgroundPlayer.Open(new Uri(fullPath, UriKind.Absolute));
                 backgroundPlayer.Volume = volume;
+                lastVolume = volume;
 
                 backgroundPlayer.MediaEnded += (s, e) =>
                 {
@@ -38,8 +41,6 @@ namespace DominoGame.Helpers
             }
         }
 
-
-
         public static void StopBackgroundMusic()
         {
             backgroundPlayer?.Stop();
@@ -53,6 +54,32 @@ namespace DominoGame.Helpers
             sfxPlayer.Open(new Uri(fullPath, UriKind.Absolute));
             sfxPlayer.Volume = volume;
             sfxPlayer.Play();
+        }
+
+        // ✅ NEW: Set volume dynamically
+        public static void SetBackgroundVolume(double volume)
+        {
+            if (backgroundPlayer != null)
+            {
+                backgroundPlayer.Volume = volume;
+                if (volume > 0)
+                    lastVolume = volume; // remember last level
+            }
+        }
+
+        // ✅ NEW: Get current volume
+        public static double GetBackgroundVolume()
+        {
+            return backgroundPlayer?.Volume ?? 0.0;
+        }
+
+        // ✅ NEW: Mute toggle
+        public static void MuteBackground(bool mute)
+        {
+            if (mute)
+                SetBackgroundVolume(0);
+            else
+                SetBackgroundVolume(lastVolume);
         }
     }
 }

@@ -14,7 +14,6 @@ namespace DominoGame.Services
                 return -1;
             }
 
-            // Simply advance to the next player
             currentPlayerIndex = (currentPlayerIndex + 1) % players.Count;
             nextPlayer = players[currentPlayerIndex];
 

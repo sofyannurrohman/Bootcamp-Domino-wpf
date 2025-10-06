@@ -69,8 +69,6 @@ namespace DominoGame.Models
             PipLeft = OriginalLeft = left;
             PipRight = OriginalRight = right;
             DisplayImage = LoadImage(left, right);
-
-            // Default orientation
             Orientation = IsDouble ? Orientation.VERTICAL : Orientation.HORIZONTAL;
         }
 
@@ -101,7 +99,7 @@ namespace DominoGame.Models
             bmp.UriSource = new Uri(path, UriKind.Absolute);
             bmp.CacheOption = BitmapCacheOption.OnLoad;
             bmp.EndInit();
-            bmp.Freeze(); // Safe for cross-thread UI
+            bmp.Freeze();
             return bmp;
         }
 

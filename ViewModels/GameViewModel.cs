@@ -99,7 +99,6 @@ namespace DominoGameWPF.ViewModels
 
                 if (result == true && gameOverWindow.PlayAgain)
                 {
-                    // ✅ Restart game setup (PlayerSelectionWindow)
                     var setupWindow = new PlayerSelectionWindow();
                     if (setupWindow.ShowDialog() == true)
                     {
@@ -108,11 +107,9 @@ namespace DominoGameWPF.ViewModels
                 }
                 else
                 {
-                    // ✅ Exit to Main Menu
                     var mainMenu = new MainMenuWindow();
                     mainMenu.Show();
 
-                    // Close current game window
                     foreach (Window window in Application.Current.Windows)
                     {
                         if (window is MainWindow)
@@ -171,7 +168,6 @@ namespace DominoGameWPF.ViewModels
         {
             if (!IsHumanTurn() || _humanTurnTcs == null) return;
 
-            // Enforce first-move double rule
             if (_game.Board.Tiles.Count == 0)
             {
                 var hasDouble = CurrentPlayer!.Hand.Any(t => t.PipLeft == t.PipRight);
@@ -193,7 +189,6 @@ namespace DominoGameWPF.ViewModels
                 return;
             }
 
-            // For NON-FIRST move — check playable sides
             bool canPlaceLeft =
                 _game.Board.Tiles.First().PipLeft == tile.PipLeft ||
                 _game.Board.Tiles.First().PipLeft == tile.PipRight;
@@ -210,7 +205,6 @@ namespace DominoGameWPF.ViewModels
 
             bool placeLeft;
 
-            // Auto-place if only one side is possible
             if (canPlaceLeft && !canPlaceRight)
             {
                 placeLeft = true;
@@ -221,7 +215,6 @@ namespace DominoGameWPF.ViewModels
             }
             else
             {
-                // Popup ONLY when BOTH SIDES are valid
                 var directionWindow = new LeftRightSelectionWindow
                 {
                     Owner = Application.Current.MainWindow
@@ -308,13 +301,12 @@ namespace DominoGameWPF.ViewModels
 
             if (next is (IDominoTile tileToPlay, bool placeLeft))
             {
-                // Enforce first-move double rule for computer
+
                 if (_game.Board.Tiles.Count == 0)
                 {
                     var hasDouble = player.Hand.Any(t => t.PipLeft == t.PipRight);
                     if (hasDouble && tileToPlay.PipLeft != tileToPlay.PipRight)
                     {
-                        // Skip non-double if double exists
                         _game.TriggerSkip(player);
                         RefreshAll();
                         await Task.Delay(800);
@@ -353,19 +345,6 @@ namespace DominoGameWPF.ViewModels
         }
 
         private bool IsHumanTurn() => !IsComputerTurn();
-
-
-
-        private void ResetUI()
-        {
-            PlayerHand.Clear();
-            BoardTiles.Clear();
-            StatusText = "";
-            OnPropertyChanged(nameof(CurrentRound));
-            OnPropertyChanged(nameof(MaxRounds));
-            OnPropertyChanged(nameof(CurrentPlayer));
-            RefreshScores();
-        }
 
         private void BindPlayers()
         {

@@ -11,11 +11,9 @@ namespace DominoGameWPF
         {
             InitializeComponent();
             DataContext = vm;
-            SoundManager.PlayBackgroundMusic("backsound.mp3");
         }
         protected override void OnClosed(EventArgs e)
         {
-            SoundManager.StopBackgroundMusic();
             base.OnClosed(e);
         }
     }

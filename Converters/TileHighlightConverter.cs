@@ -6,10 +6,7 @@ using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
-    /// <summary>
-    /// Returns a highlight brush if the tile is playable; otherwise normal brush.
-    /// Expects MultiBinding: [IDominoTile, IPlayer, IBoard]
-    /// </summary>
+
     public class TileHighlightConverter : IMultiValueConverter
     {
         private static readonly Brush HighlightBrush = CreateFrozenBrush(Color.FromRgb(0x3C, 0x3C, 0x3C));
