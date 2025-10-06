@@ -6,10 +6,6 @@ using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
-    /// <summary>
-    /// Returns full opacity for tiles that can be played; dimmed otherwise.
-    /// Expects MultiBinding: [DominoTile, Player, Board]
-    /// </summary>
     public class TilePlayableOpacityConverter : IMultiValueConverter
     {
         private const double FullyVisible = 1.0;
@@ -24,11 +20,11 @@ namespace DominoGame.Converters
             if (values[1] is not IPlayer) return Dimmed;
             if (values[2] is not IBoard board) return Dimmed;
 
-            // First move: all tiles are playable
+          
             if (!board.Tiles.Any())
                 return FullyVisible;
 
-            // Block Domino: fully visible only if tile matches left or right end
+            
             return tile.Matches(board.LeftEnd) || tile.Matches(board.RightEnd)
                 ? FullyVisible
                 : Dimmed;

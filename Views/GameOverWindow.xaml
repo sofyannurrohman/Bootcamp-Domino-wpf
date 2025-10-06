@@ -1,0 +1,50 @@
+﻿<Window x:Class="DominoGameWPF.Views.GameOverWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Game Over"
+        Height="400" Width="500"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <!-- Background Image -->
+    <Window.Background>
+        <ImageBrush ImageSource="/Assets/bg.jpg" Stretch="UniformToFill" />
+    </Window.Background>
+
+    <Grid>
+        <Border CornerRadius="10" Padding="30" Background="Transparent">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" BlurRadius="12" ShadowDepth="4" Opacity="0.6"/>
+            </Border.Effect>
+
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+
+                <TextBlock x:Name="WinnerText"
+                           Text="🏆 Winner: Player X"
+                           Foreground="#1DCD9F"
+                           FontSize="24"
+                           FontWeight="Bold"
+                           Margin="0,0,0,40"
+                           TextAlignment="Center"/>
+
+                <Button Content="🔄 Play Again"
+                        Width="180" Height="40"
+                        Background="#1DCD9F"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Margin="0,0,0,20"
+                        Cursor="Hand"
+                        Click="PlayAgain_Click"/>
+
+                <Button Content="🏠 Back To Menu"
+                        Width="180" Height="40"
+                        Background="#CF0F47"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        Cursor="Hand"
+                        Click="ExitToMenu_Click"/>
+
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

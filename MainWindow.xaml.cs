@@ -1,11 +1,7 @@
-﻿using DominoGame.Controllers;
-using DominoGame.Interfaces;
+﻿
+using DominoGame.Helpers;
 using DominoGameWPF.ViewModels;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace DominoGameWPF
 {
@@ -15,6 +11,10 @@ namespace DominoGameWPF
         {
             InitializeComponent();
             DataContext = vm;
+        }
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
         }
     }
 }

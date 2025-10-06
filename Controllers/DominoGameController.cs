@@ -63,6 +63,19 @@ namespace DominoGame.Controllers
                 }
             }
         }
+        private int _matchPoints = 30;
+        public int MatchPoints
+        {
+            get => _matchPoints;
+            private set
+            {
+                if (_matchPoints != value)
+                {
+                    _matchPoints = value;
+                    OnPropertyChanged(nameof(MatchPoints));
+                }
+            }
+        }
 
         #region Constructor
         public DominoGameController(
@@ -81,14 +94,23 @@ namespace DominoGame.Controllers
         #endregion
 
         #region Game Setup
-        public void StartGame(int maxRounds = 5)
+        public void StartGame(int numberOfPlayers = 2, int numberOfAI = 1, int maxRounds = 5, int matchPoints = 30)
         {
             Players.Clear();
-            Players.Add(new Player("You"));
-            Players.Add(new Player("Computer"));
-
+            MatchPoints = matchPoints;
             MaxRounds = maxRounds;
             CurrentRound = 0;
+
+            int humanPlayers = numberOfPlayers - numberOfAI;
+            for (int i = 1; i <= humanPlayers; i++)
+            {
+                Players.Add(new Player($"Player {i}"));
+            }
+
+            for (int i = 1; i <= numberOfAI; i++)
+            {
+                Players.Add(new Player($"Computer {i}"));
+            }
 
             foreach (var player in Players)
             {
@@ -102,6 +124,7 @@ namespace DominoGame.Controllers
 
             StartNewRound();
         }
+
 
         private void StartNewRound()
         {
@@ -118,7 +141,6 @@ namespace DominoGame.Controllers
             foreach (var player in Players)
                 player.Hand.AddRange(Deck.DrawTiles(handSize));
 
-            // Pick starting player who has a playable tile
             var startingPlayerIndex = Players.FindIndex(p => HasPlayableTileForFirstTurn(p));
             currentPlayerIndex = startingPlayerIndex >= 0 ? startingPlayerIndex : _random.Next(Players.Count);
         }
@@ -135,7 +157,6 @@ namespace DominoGame.Controllers
         {
             if (player != CurrentPlayer) return false;
 
-            // Pass player to enforce first-move double rule
             var played = _boardService.PlaceTile(Board, tile, placeLeft, Board.Tiles.Count == 0 ? player : null);
 
             if (!played) return false;
@@ -166,13 +187,11 @@ namespace DominoGame.Controllers
         public (IDominoTile tile, bool placeLeft)? GetNextPlayableTile(IPlayer player) =>
             _boardService.GetNextPlayableTile(player, Board);
 
-        // First turn helper: returns true if player has a tile that can be played on empty board
         public bool HasPlayableTileForFirstTurn(IPlayer player)
         {
             if (Board.Tiles.Count > 0)
                 return _boardService.HasPlayableTile(player, Board);
 
-            // Player can play first move if they have any double OR no doubles exist
             return player.Hand.Count > 0;
         }
         #endregion
@@ -198,7 +217,7 @@ namespace DominoGame.Controllers
 
             OnRoundOver?.Invoke(winner);
 
-            if (Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds)
+            if (Players.Any(p => p.Score >= MatchPoints) || CurrentRound > MaxRounds)
             {
                 var gameWinner = _playerService.GetGameWinner(Players);
                 if (gameWinner != null)
@@ -206,7 +225,7 @@ namespace DominoGame.Controllers
             }
         }
 
-        public bool IsGameOver() => Players.Any(p => p.Score >= 30) || CurrentRound > MaxRounds;
+        public bool IsGameOver() => Players.Any(p => p.Score >= MatchPoints) || CurrentRound > MaxRounds;
         public IPlayer? GetWinner() => _playerService.GetGameWinner(Players);
         public void ResetScores() => _playerService.ResetScores(Players);
         #endregion

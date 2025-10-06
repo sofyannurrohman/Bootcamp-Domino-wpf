@@ -4,29 +4,23 @@
         xmlns:conv="clr-namespace:DominoGame.Converters"
         xmlns:models="clr-namespace:DominoGame.Models"
         xmlns:helpers="clr-namespace:DominoGame.Helpers"
-        Title="Domino Block Game"
+        Title="Domino Block Game 🂃"
         Height="600" Width="1200"
         WindowStartupLocation="CenterScreen"
-        Background="#1E1E1E">
+        Background="#000000">
 
     <Window.Resources>
-        <!-- Converters -->
         <conv:TileSizeConverter x:Key="TileSizeConverter" NormalWidth="60" NormalHeight="120"/>
         <conv:TileHighlightConverter x:Key="TileHighlightConverter"/>
         <conv:TilePlayableConverter x:Key="TilePlayableConverter"/>
         <conv:TilePlayableOpacityConverter x:Key="TilePlayableOpacityConverter"/>
         <conv:BoolToScaleXConverter x:Key="BoolToScaleXConverter"/>
-
-        <!-- Binding Proxy -->
         <helpers:BindingProxy x:Key="TileProxy"/>
-
-        <!-- Base tile image style -->
         <Style x:Key="TileImageStyle" TargetType="Image">
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="Stretch" Value="Uniform"/>
         </Style>
 
-        <!-- ================== SHARED TILE IMAGE TEMPLATE ================== -->
         <DataTemplate x:Key="SharedTileImageTemplate" DataType="{x:Type models:DominoTile}">
             <Grid>
                 <Grid.Resources>
@@ -48,19 +42,11 @@
             </Grid>
         </DataTemplate>
 
-        <!-- ================== PLAYER TILE TEMPLATE ================== -->
         <DataTemplate x:Key="PlayerTileTemplate" DataType="{x:Type models:DominoTile}">
-            <Button Margin="4" Padding="6" Background="#2D2D30"
-                    Command="{Binding DataContext.PlayTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                    CommandParameter="{Binding}">
-                <Border CornerRadius="6" Padding="2">
-                    <Border.Background>
-                        <MultiBinding Converter="{StaticResource TileHighlightConverter}">
-                            <Binding/>
-                            <Binding Path="DataContext.CurrentPlayer" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                            <Binding Path="DataContext.Board" RelativeSource="{RelativeSource AncestorType=Window}"/>
-                        </MultiBinding>
-                    </Border.Background>
+            <Button Margin="10" Padding="2" Background="Transparent" Height="150" Width="90"
+            Command="{Binding DataContext.PlayTileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+            CommandParameter="{Binding}">
+                <Border CornerRadius="4" Padding="1" Background="Transparent">
                     <Border.Opacity>
                         <MultiBinding Converter="{StaticResource TilePlayableOpacityConverter}">
                             <Binding/>
@@ -73,21 +59,20 @@
             </Button>
         </DataTemplate>
 
+
         <!-- ================== BOARD TILE TEMPLATE ================== -->
         <DataTemplate x:Key="BoardTileTemplate" DataType="{x:Type models:DominoTile}">
             <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource SharedTileImageTemplate}"/>
         </DataTemplate>
     </Window.Resources>
 
-    <!-- ================== LAYOUT ================== -->
     <DockPanel LastChildFill="True" Margin="10">
 
-        <!-- Header -->
         <StackPanel DockPanel.Dock="Top" HorizontalAlignment="Center" Margin="0,0,0,10">
-            <TextBlock Text="Domino Block Game"
+            <TextBlock Text="Domino Block Game 🂃"
                        FontSize="22"
                        FontWeight="Bold"
-                       Foreground="#CF0A0A"/>
+                       Foreground="#1DCD9F"/>
             <TextBlock Text="{Binding StatusText}"
                        FontSize="16"
                        Foreground="White"
@@ -102,22 +87,31 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20,0,0,0">
-                    <TextBlock Text="You: " FontSize="16" Foreground="#FFD700"/>
-                    <TextBlock Text="{Binding PlayerScore}" FontSize="16" Foreground="White" Margin="0,0,20,0"/>
-
-                    <TextBlock Text="Computer: " FontSize="16" Foreground="#FFD700"/>
-                    <TextBlock Text="{Binding ComputerScore}" FontSize="16" Foreground="White"/>
+                    <ItemsControl ItemsSource="{Binding Players}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="10,0,10,0">
+                                    <TextBlock Text="{Binding Name}" FontSize="16" Foreground="#FFD700"/>
+                                    <TextBlock Text=": " FontSize="16" Foreground="#FFD700"/>
+                                    <TextBlock Text="{Binding Score}" FontSize="16" Foreground="White"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
-
-
             </StackPanel>
         </StackPanel>
 
-        <!-- Board -->
-        <Border DockPanel.Dock="Top" Background="#2D2D30" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+        <Border DockPanel.Dock="Top" CornerRadius="8" Padding="10" Margin="0,0,0,10">
+            <Border.Background>
+                <ImageBrush 
+            ImageSource="/Assets/wood2.jpg" 
+            Stretch="UniformToFill" />
+            </Border.Background>
+
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding BoardTiles}"
-                              ItemTemplate="{StaticResource BoardTileTemplate}">
+                      ItemTemplate="{StaticResource BoardTileTemplate}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>
@@ -127,18 +121,29 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Player Hand -->
-        <Border DockPanel.Dock="Bottom" Background="#252526" CornerRadius="8" Padding="10" Margin="0,10,0,0">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+
+        <Border DockPanel.Dock="Bottom" CornerRadius="8" Padding="10" Margin="0,10,0,0">
+            <Border.Background>
+                <ImageBrush ImageSource="/Assets/wood2.jpg" Stretch="UniformToFill" />
+            </Border.Background>
+
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+              VerticalScrollBarVisibility="Disabled"
+              Background="Transparent"
+              BorderThickness="0">
                 <ItemsControl ItemsSource="{Binding PlayerHand}"
-                              ItemTemplate="{StaticResource PlayerTileTemplate}">
+                  ItemTemplate="{StaticResource PlayerTileTemplate}"
+                  Margin="0" Padding="0">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal"
+                            HorizontalAlignment="Center"
+                            Margin="0" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
             </ScrollViewer>
+
         </Border>
     </DockPanel>
 </Window>

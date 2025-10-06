@@ -15,15 +15,13 @@ namespace DominoGame.Services
 
             if (concreteBoard.Tiles.Count == 0)
             {
-                // First move: if player provided, enforce double rule
+
                 if (player != null)
                 {
                     var hasDouble = player.Hand.Any(t => t.PipLeft == t.PipRight);
                     if (hasDouble && tile.PipLeft != tile.PipRight)
-                        return false; // Cannot play non-double if a double exists
+                        return false;
                 }
-
-                // If no double exists or tile is double, allow placement
                 concreteBoard.AddTileToBoard(tile, false);
                 return true;
             }
@@ -48,12 +46,11 @@ namespace DominoGame.Services
         {
             if (player.Hand.Count == 0) return null;
 
-            // First move: prioritize first double
             if (board.Tiles.Count == 0)
             {
                 var firstDouble = player.Hand.FirstOrDefault(t => t.PipLeft == t.PipRight);
                 if (firstDouble != null)
-                    return (firstDouble, true); // placeLeft doesn't matter
+                    return (firstDouble, true);
                 return (player.Hand.OrderByDescending(t => t.PipLeft + t.PipRight).First(), true);
             }
 
@@ -70,8 +67,6 @@ namespace DominoGame.Services
 
             return null;
         }
-
-
 
         public bool HasPlayableTile(IPlayer player, IBoard board) =>
             GetNextPlayableTile(player, board) != null;

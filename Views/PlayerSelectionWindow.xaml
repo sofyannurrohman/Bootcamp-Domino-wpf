@@ -1,0 +1,149 @@
+﻿<Window x:Class="DominoGameWPF.Views.PlayerSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Player Setup"
+        Height="340" Width="380"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Window.Background>
+        <ImageBrush ImageSource="/Assets/bg.jpg" Stretch="UniformToFill" />
+    </Window.Background>
+
+    <Border CornerRadius="10" Padding="20" Background="Transparent">
+        <StackPanel>
+
+            <!-- Title -->
+            <TextBlock Text="Domino Block Game 🂃"
+                       Foreground="#1DCD9F"
+                       FontSize="20"
+                       FontWeight="Bold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,15"/>
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.2*"/>
+                    <ColumnDefinition Width="1.5*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Total Players -->
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Total 👤"
+                           Foreground="#1DCD9F"
+                           FontSize="14"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,5"/>
+
+                <ComboBox x:Name="TotalPlayersCombo"
+                          Grid.Row="0"
+                          Grid.Column="1"
+                          Width="150"
+                          Height="28"
+                          Margin="0,5"
+                          SelectedIndex="0"
+                          Background="#3A3A3D"
+                          Foreground="Black"
+                          BorderBrush="#555">
+                    <ComboBoxItem Content="2"/>
+                    <ComboBoxItem Content="3"/>
+                    <ComboBoxItem Content="4"/>
+                </ComboBox>
+
+                <!-- AI Players -->
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Text="Total 🤖"
+                           FontWeight="Bold"
+                           Foreground="#1DCD9F"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Margin="0,5"/>
+
+                <ComboBox x:Name="AiPlayersCombo"
+                          Grid.Row="1"
+                          Grid.Column="1"
+                          Width="150"
+                          Height="28"
+                          Margin="0,5"
+                          SelectedIndex="0"
+                          Background="#3A3A3D"
+                          Foreground="Black"
+                          BorderBrush="#555">
+                    <ComboBoxItem Content="0"/>
+                    <ComboBoxItem Content="1"/>
+                    <ComboBoxItem Content="2"/>
+                    <ComboBoxItem Content="3"/>
+                </ComboBox>
+
+                <!-- Max Rounds -->
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="Round 🔁"
+                           Foreground="#1DCD9F"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Margin="0,5"/>
+
+                <ComboBox x:Name="RoundsCombo"
+                          Grid.Row="2"
+                          Grid.Column="1"
+                          Width="150"
+                          Height="28"
+                          Margin="0,5"
+                          SelectedIndex="0"
+                          Background="#3A3A3D"
+                          Foreground="Black"
+                          BorderBrush="#555">
+                    <ComboBoxItem Content="5"/>
+                    <ComboBoxItem Content="10"/>
+                    <ComboBoxItem Content="15"/>
+                </ComboBox>
+
+                <!-- ✅ Match Points -->
+                <TextBlock Grid.Row="3" Grid.Column="0"
+                           Text="Point to 🏆"
+                           Foreground="#1DCD9F"
+                           FontWeight="Bold"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           Margin="0,5"/>
+
+                <ComboBox x:Name="MatchPointsCombo"
+                          Grid.Row="3"
+                          Grid.Column="1"
+                          Width="150"
+                          Height="28"
+                          Margin="0,5"
+                          SelectedIndex="0"
+                          Background="#3A3A3D"
+                          Foreground="Black"
+                          BorderBrush="#555">
+                    <ComboBoxItem Content="30"/>
+                    <ComboBoxItem Content="50"/>
+                    <ComboBoxItem Content="100"/>
+                </ComboBox>
+
+                <Button Grid.Row="4"
+                        Grid.ColumnSpan="2"
+                        Content="▶   Start Game"
+                        Margin="0,20,0,0"
+                        Padding="8"
+                        Height="35"
+                        Background="#169976"
+                        Foreground="white"
+                        FontWeight="Bold"
+                        BorderThickness="0"
+                        Cursor="Hand"
+                        Click="StartGame_Click"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</Window>

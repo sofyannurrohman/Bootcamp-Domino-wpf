@@ -9,6 +9,5 @@ namespace DominoGame.Interfaces
         string Name { get; }
         List<IDominoTile> Hand { get; }
         int Score { get; set; }
-        bool PlayDominoTile(IDominoTile dominoTile);
     }
 }

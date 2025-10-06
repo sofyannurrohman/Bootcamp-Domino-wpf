@@ -19,10 +19,8 @@ namespace DominoGame
         {
             base.OnStartup(e);
             ConfigureServices();
-
-            // Resolve MainWindow with GameViewModel injected
-            var mainWindow = Services.GetRequiredService<MainWindow>();
-            mainWindow.Show();
+            var mainMenu = new DominoGameWPF.Views.MainMenuWindow();
+            mainMenu.Show();
         }
 
         private void ConfigureServices()

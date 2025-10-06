@@ -7,10 +7,6 @@ using DominoGame.Interfaces;
 
 namespace DominoGame.Converters
 {
-    /// <summary>
-    /// Determines whether a DominoTile is playable for the current player on the current board.
-    /// MultiBinding values expected: [DominoTile, Player, Board]
-    /// </summary>
     public class TilePlayableConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
@@ -28,9 +24,6 @@ namespace DominoGame.Converters
             => throw new NotSupportedException("TilePlayableConverter does not support ConvertBack.");
     }
 
-    /// <summary>
-    /// Static helper class so other converters/components can share the same logic.
-    /// </summary>
     public static class TilePlayRules
     {
         public static bool CanPlay(IDominoTile tile, IPlayer player, IBoard board)
@@ -43,11 +36,6 @@ namespace DominoGame.Converters
                 : CanPlayRegularTile(tile, board);
         }
 
-        /// <summary>
-        /// Opening rule:
-        /// - If player has doubles → only the largest double is playable.
-        /// - If no doubles → only the tile with the highest pip sum is playable.
-        /// </summary>
         private static bool CanPlayOpeningTile(IDominoTile tile, IPlayer player)
         {
             if (player.Hand == null || !player.Hand.Any())
@@ -64,9 +52,6 @@ namespace DominoGame.Converters
             return tile.TotalPip == maxPip;
         }
 
-        /// <summary>
-        /// Regular play: tile must match either end of the board.
-        /// </summary>
         private static bool CanPlayRegularTile(IDominoTile tile, IBoard board)
         {
             if (board.Tiles == null || !board.Tiles.Any())
