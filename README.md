@@ -1,4 +1,4 @@
-# Domino Game WPF MVVM
+# Domino Game WPF MVVM 🂃
 
 A classic **Domino Block Game** implemented in **C# WPF** using **MVVM architecture** with **Dependency Injection** for clean design, testability, and maintainability.
 
@@ -16,7 +16,7 @@ A classic **Domino Block Game** implemented in **C# WPF** using **MVVM architect
 - [Contributing](#contributing)  
 ---
 
-## Features
+## 🚀 Features
 
 - Two-player Domino game (Human vs Computer)  
 - Block Domino rules with doubles and pip sums  
@@ -28,17 +28,17 @@ A classic **Domino Block Game** implemented in **C# WPF** using **MVVM architect
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 This project uses **MVVM + DI pattern**:
 
 MainWindow (View)
 ->
-GameViewModel
+ GameViewModel
 ->
-DominoGameController
+ DominoGameController
 ->
-Services:
+ Services:
 - BoardService
 - PlayerService
 - TurnService
@@ -53,7 +53,6 @@ Interfaces:
 Converters:
 - TilePlayableConverter (highlight playable tiles)
 
-
 **Highlights:**
 
 - **Dependency Injection**: All services and controller are injected, no manual instantiation in `MainWindow` or `ViewModel`.
@@ -62,7 +61,7 @@ Converters:
 
 ---
 
-## Installation
+## ⚙️ Installation
 
 1. Clone the repository:
 
@@ -77,7 +76,7 @@ git clone https://github.com/yourusername/domino-wpf.git
 
 ---
 
-## Usage
+## 🎮 Usage
 
 1. Run the project (F5)
 
@@ -90,7 +89,7 @@ git clone https://github.com/yourusername/domino-wpf.git
 5. The game continues until the maximum number of rounds or a player reaches the target score.
 
 ---
-## Gameplay Rules
+## 📜 Gameplay Rules
 
 1. Opening Move: If player has doubles, only the largest double can start. Otherwise, the tile with the highest pip sum starts.
    
@@ -101,11 +100,11 @@ git clone https://github.com/yourusername/domino-wpf.git
 4. Game End: Maximum rounds reached or a player reaches target score.
    
 ---
-## Visual Quick Diagram
+## 🧠 Visual Quick Diagram
 
 Shout out to **kristoferpamung** for providing UML Diagram you can check out in:
 https://gist.github.com/kristoferpamung/b1d31936fe1711c5ae4cd7d55bea995b
 
 ---
-## Contributing
+## 🤝 Contributing
 Feel free to pull-request this project :) . Happy Develop :D
